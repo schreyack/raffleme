@@ -1,6 +1,14 @@
 var countdownInterval = null;
 var countdown = 5;
 var lastWinner = null;
+var currentChances = 0;
+var currentWinners = [];
+
+// Test if the function is defined
+window.testFunction = function() {
+    alert('Test function called!');
+    console.log('Test function executed');
+};
 
 function updateWinnerDisplay(data) {
     const winners = data.winners || [];
@@ -35,10 +43,33 @@ function updateChancesDisplay(chances) {
     chancesDiv.style.display = chances > 0 ? 'block' : 'none';
 }
 
-let currentChances = 0;
+function renderWinnersList(winners) {
+    const winnersUl = document.getElementById('winnersUl');
+    winnersUl.innerHTML = '';
+    winners.forEach((winner, index) => {
+        const li = document.createElement('li');
+        li.textContent = `${index + 1}. ${winner}`;
+        winnersUl.appendChild(li);
+    });
+}
 
-document.getElementById('nameForm').addEventListener('submit', function(event) {
-    event.preventDefault();
+function checkRaffleComplete(chances) {
+    if (chances === 0) {
+        // Hide form and show winners
+        document.getElementById('nameForm').style.display = 'none';
+        document.getElementById('winner').style.display = 'none';
+        document.getElementById('chances').style.display = 'none';
+        document.getElementById('spinner').style.display = 'none';
+        document.getElementById('message').style.display = 'none';
+        document.getElementById('winnersList').style.display = 'block';
+    } else {
+        // Show form
+        document.getElementById('nameForm').style.display = 'block';
+        document.getElementById('winnersList').style.display = 'none';
+    }
+}
+
+function submitName() {
     const name = document.getElementById('name').value.trim();
     if (name) {
         fetch('/api/names', {
@@ -67,7 +98,7 @@ document.getElementById('nameForm').addEventListener('submit', function(event) {
             console.error('Error:', err);
         });
     }
-});
+}
 
 // Initial winner display
 fetch('/api/winner')
@@ -81,6 +112,7 @@ fetch('/api/chances')
     .then(data => {
         currentChances = data.chances;
         updateChancesDisplay(data.chances);
+        checkRaffleComplete(data.chances);
     })
     .catch(err => console.error('Error:', err));
 
@@ -100,6 +132,29 @@ setInterval(() => {
             if (data.chances !== currentChances) {
                 currentChances = data.chances;
                 updateChancesDisplay(data.chances);
+                checkRaffleComplete(data.chances);
+            }
+        })
+        .catch(err => console.error('Error:', err));
+}, 1000);
+
+// Initial winners list
+fetch('/api/winners')
+    .then(res => res.json())
+    .then(data => {
+        currentWinners = data.winners;
+        renderWinnersList(data.winners);
+    })
+    .catch(err => console.error('Error:', err));
+
+// Poll for winners list updates every 1 second
+setInterval(() => {
+    fetch('/api/winners')
+        .then(res => res.json())
+        .then(data => {
+            if (JSON.stringify(data.winners) !== JSON.stringify(currentWinners)) {
+                currentWinners = data.winners;
+                renderWinnersList(data.winners);
             }
         })
         .catch(err => console.error('Error:', err));

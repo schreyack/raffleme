@@ -298,3 +298,23 @@ document.getElementById('chancesLeft').addEventListener('change', function() {
     })
     .catch(err => console.error('Error:', err));
 });
+
+// New Game button
+document.getElementById('newGameBtn').addEventListener('click', function() {
+    if (confirm('Are you sure you want to start a new game? This will clear all names and winners.')) {
+        fetch('/api/new-game', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert('New game started! All data has been cleared.');
+                document.getElementById('chancesLeft').value = 5;
+                // The polling will update the UI automatically
+            }
+        })
+        .catch(err => console.error('Error:', err));
+    }
+});

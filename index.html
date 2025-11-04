@@ -12,13 +12,17 @@
         <div id="winner"></div>
         <div id="chances"></div>
         <div id="spinner" class="spinner"></div>
-        <form id="nameForm">
+        <form id="nameForm" onsubmit="event.preventDefault(); submitName(); return false;">
             <label for="name">Enter your name:</label>
             <input type="text" id="name" name="name" required>
-            <button type="submit">Submit</button>
+            <button type="button" onclick="submitName()">Submit</button>
         </form>
         <div id="message"></div>
+        <div id="winnersList" style="display: none;">
+            <h2>Raffle Complete! Winners:</h2>
+            <ul id="winnersUl"></ul>
+        </div>
     </div>
-    <script src="script.js"></script>
+    <script src="script.js?v=4"></script>
 </body>
 </html>

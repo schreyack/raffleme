@@ -167,5 +167,15 @@ def select_winner():
     threading.Thread(target=delayed_selection).start()
     return jsonify({'success': True})
 
+@app.route('/api/new-game', methods=['POST'])
+def new_game():
+    # Clear all data
+    save_names([])
+    save_winners_list([])
+    save_chances(5)
+    save_winner([])
+    save_selecting(False)
+    return jsonify({'success': True})
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)
