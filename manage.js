@@ -133,6 +133,20 @@ document.getElementById('addNameBtn').addEventListener('click', function() {
     }
 });
 
+// Initial render of names
+fetch('/api/names')
+    .then(res => res.json())
+    .then(names => renderNameList(names))
+    .catch(err => console.error('Error:', err));
+
+// Poll for names updates every 1 second
+setInterval(() => {
+    fetch('/api/names')
+        .then(res => res.json())
+        .then(names => renderNameList(names))
+        .catch(err => console.error('Error:', err));
+}, 1000);
+
 // Initial winner display
 fetch('/api/winner')
     .then(res => res.json())
