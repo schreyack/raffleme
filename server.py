@@ -63,10 +63,12 @@ def add_name():
     name = data.get('name', '').strip()
     if name:
         names = load_names()
+        if name.lower() in [n.lower() for n in names]:
+            return jsonify({'success': False, 'message': 'Name already exists. Please enter a different name.'}), 409
         names.append(name)
         save_names(names)
         return jsonify({'success': True, 'names': names})
-    return jsonify({'success': False}), 400
+    return jsonify({'success': False, 'message': 'Name cannot be empty.'}), 400
 
 @app.route('/api/names/<int:index>', methods=['PUT'])
 def update_name(index):
@@ -101,8 +103,16 @@ def select_winner():
     if names:
         winner = random.choice(names)
         save_winner(winner)
+        
+        # Remove winner from list (case-insensitive removal)
+        names_lower = [n.lower() for n in names]
+        if winner.lower() in names_lower:
+            winner_index = names_lower.index(winner.lower())
+            names.pop(winner_index)
+            save_names(names)
+
         save_selecting(False)
-        return jsonify({'success': True, 'winner': winner})
+        return jsonify({'success': True, 'winner': winner, 'names': names})
     return jsonify({'success': False}), 400
 
 if __name__ == '__main__':

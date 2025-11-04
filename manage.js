@@ -122,14 +122,22 @@ document.getElementById('addNameBtn').addEventListener('click', function() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: newName })
         })
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) {
+                return res.json().then(err => { throw err; });
+            }
+            return res.json();
+        })
         .then(data => {
             if (data.success) {
                 renderNameList(data.names);
                 newNameInput.value = '';
             }
         })
-        .catch(err => console.error('Error:', err));
+        .catch(err => {
+            alert(err.message || 'Failed to add name.');
+            console.error('Error:', err);
+        });
     }
 });
 

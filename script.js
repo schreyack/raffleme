@@ -25,18 +25,26 @@ document.getElementById('nameForm').addEventListener('submit', function(event) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name })
         })
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) {
+                return res.json().then(err => { throw err; });
+            }
+            return res.json();
+        })
         .then(data => {
             if (data.success) {
                 const messageDiv = document.getElementById('message');
                 messageDiv.textContent = `Hello, ${name}! Your name has been submitted. Total names: ${data.names.length}`;
                 messageDiv.style.color = 'green';
                 document.getElementById('name').value = '';
-            } else {
-                alert('Failed to submit name.');
             }
         })
-        .catch(err => console.error('Error:', err));
+        .catch(err => {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = err.message || 'Failed to submit name.';
+            messageDiv.style.color = 'red';
+            console.error('Error:', err);
+        });
     }
 });
 
