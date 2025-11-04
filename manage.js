@@ -1,3 +1,9 @@
+function updateChancesDisplay(chances) {
+    const chancesDiv = document.getElementById('chances');
+    chancesDiv.textContent = `Chances left to win: ${chances}`;
+    chancesDiv.style.display = chances > 0 ? 'block' : 'none';
+}
+
 function renderNameList(names) {
     document.getElementById('totalNames').textContent = `Total names: ${names.length}`;
     const nameList = document.getElementById('nameList');
@@ -25,21 +31,64 @@ function renderNameList(names) {
     });
 }
 
+let currentNames = [];
+let currentChances = 0;
+let currentWinners = [];
+
+function renderWinnersList(winners) {
+    const winnersUl = document.getElementById('winnersUl');
+    winnersUl.innerHTML = '';
+    winners.forEach((winner, index) => {
+        const li = document.createElement('li');
+        li.textContent = `${index + 1}. ${winner}`;
+        winnersUl.appendChild(li);
+    });
+}
+
+var countdownInterval = null;
+var countdown = 5;
+var lastWinner = null;
+
 function updateWinnerDisplay(data) {
-    const winner = data.winner;
+    const winners = data.winners || [];
     const selecting = data.selecting;
     const winnerDiv = document.getElementById('winner');
-    const spinnerDiv = document.getElementById('spinner');
     if (selecting) {
-        winnerDiv.style.display = 'none';
-        spinnerDiv.style.display = 'block';
-    } else if (winner) {
-        winnerDiv.textContent = `Winner: ${winner}`;
+        if (!countdownInterval) {
+            countdown = 5;
+            countdownInterval = setInterval(() => {
+                countdown--;
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                }
+                updateWinnerDisplay({winners: [], selecting: true});
+            }, 1000);
+        }
+        winnerDiv.innerHTML = `Selecting Winner In:<br><span class="countdown-number">${countdown}</span>`;
         winnerDiv.style.display = 'block';
-        spinnerDiv.style.display = 'none';
+    } else if (winners.length > 0) {
+        const winner = winners[0];
+        if (winner !== lastWinner) {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+            lastWinner = winner;
+            winnerDiv.innerHTML = `WINNER:<br><span class="winner-name">${winner}</span>`;
+            winnerDiv.style.display = 'block';
+            // Clear winner display after 10 seconds
+            setTimeout(() => {
+                winnerDiv.style.display = 'none';
+                lastWinner = null;
+            }, 10000);
+        }
     } else {
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+        }
         winnerDiv.style.display = 'none';
-        spinnerDiv.style.display = 'none';
     }
 }
 
@@ -93,24 +142,36 @@ function deleteName(index) {
 }
 
 document.getElementById('selectWinner').addEventListener('click', function() {
-    // Clear the winner on the server
-    fetch('/api/winner', { method: 'DELETE' })
-        .then(() => {
-            // After 5 seconds, select winner
-            setTimeout(() => {
-                fetch('/api/winner', { method: 'POST' })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            renderNameList(data.names);
-                        } else {
-                            alert('No names to select from.');
-                        }
-                    })
-                    .catch(err => console.error('Error:', err));
-            }, 5000);
+    const button = document.getElementById('selectWinner');
+    
+    // Disable button during selection
+    button.disabled = true;
+    button.textContent = 'Selecting...';
+    
+    fetch('/api/select-winner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // Re-enable button after a short delay
+                setTimeout(() => {
+                    button.disabled = false;
+                    button.textContent = '🎲 Select Winner';
+                }, 2000);
+            } else {
+                alert(data.message || 'Cannot select winner.');
+                button.disabled = false;
+                button.textContent = '🎲 Select Winner';
+            }
         })
-        .catch(err => console.error('Error clearing winner:', err));
+        .catch(err => {
+            console.error('Error:', err);
+            button.disabled = false;
+            button.textContent = '🎲 Select Winner';
+        });
 });
 
 document.getElementById('addNameBtn').addEventListener('click', function() {
@@ -144,14 +205,22 @@ document.getElementById('addNameBtn').addEventListener('click', function() {
 // Initial render of names
 fetch('/api/names')
     .then(res => res.json())
-    .then(names => renderNameList(names))
+    .then(names => {
+        currentNames = names;
+        renderNameList(names);
+    })
     .catch(err => console.error('Error:', err));
 
 // Poll for names updates every 1 second
 setInterval(() => {
     fetch('/api/names')
         .then(res => res.json())
-        .then(names => renderNameList(names))
+        .then(names => {
+            if (JSON.stringify(names) !== JSON.stringify(currentNames)) {
+                currentNames = names;
+                renderNameList(names);
+            }
+        })
         .catch(err => console.error('Error:', err));
 }, 1000);
 
@@ -168,3 +237,64 @@ setInterval(() => {
         .then(data => updateWinnerDisplay(data))
         .catch(err => console.error('Error:', err));
 }, 1000);
+
+// Initial chances
+fetch('/api/chances')
+    .then(res => res.json())
+    .then(data => {
+        currentChances = data.chances;
+        document.getElementById('chancesLeft').value = data.chances;
+        updateChancesDisplay(data.chances);
+    })
+    .catch(err => console.error('Error:', err));
+
+// Poll for chances updates every 1 second
+setInterval(() => {
+    fetch('/api/chances')
+        .then(res => res.json())
+        .then(data => {
+            if (data.chances !== currentChances) {
+                currentChances = data.chances;
+                document.getElementById('chancesLeft').value = data.chances;
+                updateChancesDisplay(data.chances);
+            }
+        })
+        .catch(err => console.error('Error:', err));
+}, 1000);
+
+// Initial winners list
+fetch('/api/winners')
+    .then(res => res.json())
+    .then(data => {
+        currentWinners = data.winners;
+        renderWinnersList(data.winners);
+    })
+    .catch(err => console.error('Error:', err));
+
+// Poll for winners list updates every 1 second
+setInterval(() => {
+    fetch('/api/winners')
+        .then(res => res.json())
+        .then(data => {
+            if (JSON.stringify(data.winners) !== JSON.stringify(currentWinners)) {
+                currentWinners = data.winners;
+                renderWinnersList(data.winners);
+            }
+        })
+        .catch(err => console.error('Error:', err));
+}, 1000);
+
+// Update chances when input changes
+document.getElementById('chancesLeft').addEventListener('change', function() {
+    const newChances = parseInt(this.value) || 0;
+    fetch('/api/chances', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chances: newChances })
+    })
+    .then(res => res.json())
+    .then(data => {
+        updateChancesDisplay(data.chances);
+    })
+    .catch(err => console.error('Error:', err));
+});

@@ -1,5 +1,7 @@
 import json
 import random
+import threading
+import time
 from flask import Flask, request, jsonify, send_from_directory
 
 app = Flask(__name__)
@@ -7,6 +9,8 @@ app = Flask(__name__)
 NAMES_FILE = 'names.json'
 WINNER_FILE = 'winner.json'
 SELECTING_FILE = 'selecting.json'
+CHANCES_FILE = 'chances.json'
+WINNERS_LIST_FILE = 'winners_list.json'
 
 def load_names():
     try:
@@ -40,6 +44,28 @@ def load_selecting():
 def save_selecting(selecting):
     with open(SELECTING_FILE, 'w') as f:
         json.dump(selecting, f)
+
+def load_chances():
+    try:
+        with open(CHANCES_FILE, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return 0
+
+def save_chances(chances):
+    with open(CHANCES_FILE, 'w') as f:
+        json.dump(chances, f)
+
+def load_winners_list():
+    try:
+        with open(WINNERS_LIST_FILE, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return []
+
+def save_winners_list(winners_list):
+    with open(WINNERS_LIST_FILE, 'w') as f:
+        json.dump(winners_list, f)
 
 @app.route('/')
 def index():
@@ -91,29 +117,55 @@ def delete_name(index):
         return jsonify({'success': True, 'names': names})
     return jsonify({'success': False}), 404
 
+@app.route('/api/chances', methods=['GET'])
+def get_chances():
+    return jsonify({'chances': load_chances()})
+
+@app.route('/api/chances', methods=['PUT'])
+def set_chances():
+    data = request.get_json()
+    chances = data.get('chances', 0)
+    save_chances(chances)
+    return jsonify({'chances': chances})
+
+@app.route('/api/winners', methods=['GET'])
+def get_winners_list():
+    return jsonify({'winners': load_winners_list()})
+
 @app.route('/api/winner', methods=['GET'])
 def get_winner():
-    winner = load_winner()
+    winners = load_winner()
     selecting = load_selecting()
-    return jsonify({'winner': winner, 'selecting': selecting})
+    return jsonify({'winners': winners, 'selecting': selecting})
 
-@app.route('/api/winner', methods=['POST'])
+@app.route('/api/select-winner', methods=['POST'])
 def select_winner():
-    names = load_names()
-    if names:
-        winner = random.choice(names)
-        save_winner(winner)
-        
-        # Remove winner from list (case-insensitive removal)
-        names_lower = [n.lower() for n in names]
-        if winner.lower() in names_lower:
-            winner_index = names_lower.index(winner.lower())
-            names.pop(winner_index)
-            save_names(names)
-
+    chances = load_chances()
+    if chances <= 0:
+        return jsonify({'success': False, 'message': 'No chances left to select a winner.'}), 400
+    
+    save_winner([])
+    save_selecting(True)
+    
+    def delayed_selection():
+        time.sleep(5)
+        names = load_names()
+        if names:
+            winner = random.choice(names)
+            save_winner([winner])
+            # Add to winners list
+            winners_list = load_winners_list()
+            winners_list.append(winner)
+            save_winners_list(winners_list)
+            # Decrement chances
+            current_chances = load_chances()
+            save_chances(current_chances - 1)
+        else:
+            save_winner([])
         save_selecting(False)
-        return jsonify({'success': True, 'winner': winner, 'names': names})
-    return jsonify({'success': False}), 400
+    
+    threading.Thread(target=delayed_selection).start()
+    return jsonify({'success': True})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)

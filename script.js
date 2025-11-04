@@ -1,20 +1,41 @@
+var countdownInterval = null;
+var countdown = 5;
+var lastWinner = null;
+
 function updateWinnerDisplay(data) {
-    const winner = data.winner;
+    const winners = data.winners || [];
     const selecting = data.selecting;
     const winnerDiv = document.getElementById('winner');
-    const spinnerDiv = document.getElementById('spinner');
     if (selecting) {
-        winnerDiv.style.display = 'none';
-        spinnerDiv.style.display = 'block';
-    } else if (winner) {
-        winnerDiv.textContent = `Winner: ${winner}`;
+        if (!countdownInterval) {
+            countdown = 5;
+            countdownInterval = setInterval(() => {
+                countdown--;
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                }
+                updateWinnerDisplay({winners: [], selecting: true});
+            }, 1000);
+        }
+        winnerDiv.innerHTML = `Selecting Winner In:<br><span class="countdown-number">${countdown}</span>`;
         winnerDiv.style.display = 'block';
-        spinnerDiv.style.display = 'none';
     } else {
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+        }
         winnerDiv.style.display = 'none';
-        spinnerDiv.style.display = 'none';
     }
 }
+
+function updateChancesDisplay(chances) {
+    const chancesDiv = document.getElementById('chances');
+    chancesDiv.textContent = `Chances left to win: ${chances}`;
+    chancesDiv.style.display = chances > 0 ? 'block' : 'none';
+}
+
+let currentChances = 0;
 
 document.getElementById('nameForm').addEventListener('submit', function(event) {
     event.preventDefault();
@@ -54,10 +75,32 @@ fetch('/api/winner')
     .then(data => updateWinnerDisplay(data))
     .catch(err => console.error('Error:', err));
 
+// Initial chances display
+fetch('/api/chances')
+    .then(res => res.json())
+    .then(data => {
+        currentChances = data.chances;
+        updateChancesDisplay(data.chances);
+    })
+    .catch(err => console.error('Error:', err));
+
 // Poll for winner updates every 1 second
 setInterval(() => {
     fetch('/api/winner')
         .then(res => res.json())
         .then(data => updateWinnerDisplay(data))
+        .catch(err => console.error('Error:', err));
+}, 1000);
+
+// Poll for chances updates every 1 second
+setInterval(() => {
+    fetch('/api/chances')
+        .then(res => res.json())
+        .then(data => {
+            if (data.chances !== currentChances) {
+                currentChances = data.chances;
+                updateChancesDisplay(data.chances);
+            }
+        })
         .catch(err => console.error('Error:', err));
 }, 1000);
