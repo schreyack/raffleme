@@ -259,25 +259,6 @@ def select_winner():
     threading.Thread(target=delayed_selection).start()
     return {'success': True}
 
-@app.route('/api/user-chances', methods=['GET'])
-def get_user_chances():
-    name = request.args.get('name', '').strip()
-    if name:
-        names = load_names()
-        chances = names.get(name, 0)
-        return jsonify({'chances': chances})
-    return jsonify({'chances': 0}), 400
-
-@app.route('/api/winners', methods=['GET'])
-def get_winners_list():
-    return jsonify({'winners': load_winners_list()})
-
-@app.route('/api/winner', methods=['GET'])
-def get_winner():
-    winners = load_winner()
-    selecting = load_selecting()
-    return jsonify({'winners': winners, 'selecting': selecting})
-
 @app.post('/api/new-game')
 def new_game():
     # Clear all data
