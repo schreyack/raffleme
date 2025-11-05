@@ -53,15 +53,24 @@ function updateWinnerDisplay(data) {
 }
 
 function updateChancesDisplay(chances) {
-    const chancesDiv = document.getElementById('chances');
-    chancesDiv.textContent = `Chances left to win: ${chances}`;
-    chancesDiv.style.display = chances > 0 ? 'block' : 'none';
+    const chancesValue = document.getElementById('chances-value');
+    const chancesRow = chancesValue.closest('tr');
+    chancesValue.textContent = chances;
+    chancesRow.style.display = chances > 0 ? 'table-row' : 'none';
 }
 
 function updateTotalPlayersDisplay(totalPlayers) {
-    const totalPlayersDiv = document.getElementById('totalPlayers');
-    totalPlayersDiv.textContent = `Total players: ${totalPlayers}`;
-    totalPlayersDiv.style.display = totalPlayers > 0 ? 'block' : 'none';
+    const totalPlayersValue = document.getElementById('totalPlayers-value');
+    const totalPlayersRow = totalPlayersValue.closest('tr');
+    totalPlayersValue.textContent = totalPlayers;
+    totalPlayersRow.style.display = totalPlayers > 0 ? 'table-row' : 'none';
+}
+
+function updateUserChancesDisplay(chances) {
+    const userChancesValue = document.getElementById('userChances-value');
+    const userChancesRow = userChancesValue.closest('tr');
+    userChancesValue.textContent = chances;
+    userChancesRow.style.display = chances > 0 ? 'table-row' : 'none';
 }
 
 function renderWinnersList(winners) {
@@ -129,6 +138,11 @@ function submitName() {
                 // Mark as entered for this game
                 localStorage.setItem('raffleEnteredGameId', currentServerGameId);
                 localStorage.setItem('userName', name);
+                // Fetch and display user chances
+                fetch(`/api/user-chances?name=${encodeURIComponent(name)}`)
+                    .then(res => res.json())
+                    .then(data => updateUserChancesDisplay(data.chances))
+                    .catch(err => console.error('Error fetching user chances:', err));
             }
         })
         .catch(err => {
@@ -152,6 +166,14 @@ fetch('/api/game-id')
             messageDiv.textContent = 'You have already entered the raffle!';
             messageDiv.style.color = '#2196F3';
             document.getElementById('nameForm').style.display = 'none';
+            // Fetch user chances
+            const userName = localStorage.getItem('userName');
+            if (userName) {
+                fetch(`/api/user-chances?name=${encodeURIComponent(userName)}`)
+                    .then(res => res.json())
+                    .then(data => updateUserChancesDisplay(data.chances))
+                    .catch(err => console.error('Error fetching user chances:', err));
+            }
         }
     })
     .catch(err => console.error('Error fetching game ID:', err));
@@ -271,6 +293,11 @@ function submitTrivia() {
         console.log('Trivia response:', data);
         if (data.success) {
             showTriviaPopup(true, 'Correct!', '🎉 You got 2 extra chances!');
+            // Update user chances display
+            fetch(`/api/user-chances?name=${encodeURIComponent(userName)}`)
+                .then(res => res.json())
+                .then(chancesData => updateUserChancesDisplay(chancesData.chances))
+                .catch(err => console.error('Error fetching user chances:', err));
         } else {
             showTriviaPopup(false, 'Wrong Answer', 'Better luck next time!');
         }

@@ -3,23 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OVERLAKE LIGHTS 2025 RAFFLE - Management</title>
+    <title>OVERLAKE LIGHTS 2025 RAFFLE Management</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container management-container">
         <div id="winner"></div>
-        <div id="chances"></div>
+        <table class="stats-table">
+            <tr>
+                <td>Prizes Available:</td>
+                <td id="chances-value"></td>
+            </tr>
+            <tr>
+                <td>Total players:</td>
+                <td id="totalPlayers-value"></td>
+            </tr>
+        </table>
         <div id="spinner" class="spinner"></div>
-        <h1>OVERLAKE LIGHTS 2025 RAFFLE - Management</h1>
-        <div id="totalNames"></div>
-        <div id="winnersList">
-            <h2>Winners:</h2>
-            <ul id="winnersUl"></ul>
-        </div>
-        <div id="winnerSettings">
+        <button id="configBtn">⚙️ Configuration</button>
+        <div id="configPanel" style="display: none;">
+            <h3>Settings</h3>
             <label for="chancesLeft">Chances left to win:</label>
             <input type="number" id="chancesLeft" value="0">
+        </div>
+        <div id="winnerSettings">
             <button id="selectWinner">🎲 Select Winner</button>
         </div>
         <div id="addNameSection">
@@ -27,6 +34,13 @@
             <button id="addNameBtn">Add</button>
         </div>
         <ul id="nameList"></ul>
+        <div id="winnersList">
+            <h2>Winners</h2>
+            <table class="stats-table" id="winnersTable">
+                <tbody id="winnersTableBody">
+                </tbody>
+            </table>
+        </div>
         <div id="newGameSection">
             <button id="newGameBtn">New Game</button>
         </div>

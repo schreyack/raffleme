@@ -1,11 +1,15 @@
 function updateChancesDisplay(chances) {
-    const chancesDiv = document.getElementById('chances');
-    chancesDiv.textContent = `Chances left to win: ${chances}`;
-    chancesDiv.style.display = chances > 0 ? 'block' : 'none';
+    const chancesValue = document.getElementById('chances-value');
+    const chancesRow = chancesValue.closest('tr');
+    chancesValue.textContent = chances;
+    chancesRow.style.display = chances > 0 ? 'table-row' : 'none';
 }
 
 function renderNameList(names) {
-    document.getElementById('totalNames').textContent = `Total Players: ${names.length}`;
+    const totalPlayersValue = document.getElementById('totalPlayers-value');
+    const totalPlayersRow = totalPlayersValue.closest('tr');
+    totalPlayersValue.textContent = names.length;
+    totalPlayersRow.style.display = names.length > 0 ? 'table-row' : 'none';
     const nameList = document.getElementById('nameList');
     nameList.innerHTML = '';
     names.forEach((name, index) => {
@@ -36,12 +40,19 @@ let currentChances = 0;
 let currentWinners = [];
 
 function renderWinnersList(winners) {
-    const winnersUl = document.getElementById('winnersUl');
-    winnersUl.innerHTML = '';
+    const winnersTableBody = document.getElementById('winnersTableBody');
+    winnersTableBody.innerHTML = '';
     winners.forEach((winner, index) => {
-        const li = document.createElement('li');
-        li.textContent = `${index + 1}. ${winner}`;
-        winnersUl.appendChild(li);
+        const tr = document.createElement('tr');
+        const tdNumber = document.createElement('td');
+        const tdName = document.createElement('td');
+        
+        tdNumber.textContent = `${index + 1}.`;
+        tdName.textContent = winner;
+        
+        tr.appendChild(tdNumber);
+        tr.appendChild(tdName);
+        winnersTableBody.appendChild(tr);
     });
 }
 
@@ -300,4 +311,10 @@ document.getElementById('newGameBtn').addEventListener('click', function() {
         })
         .catch(err => console.error('Error:', err));
     }
+});
+
+// Configuration panel toggle
+document.getElementById('configBtn').addEventListener('click', function() {
+    const configPanel = document.getElementById('configPanel');
+    configPanel.style.display = configPanel.style.display === 'none' ? 'block' : 'none';
 });

@@ -188,6 +188,15 @@ def submit_answer():
                 return jsonify({'success': True})  # Still mark as correct even if winner already removed
     return jsonify({'success': False})
 
+@app.route('/api/user-chances', methods=['GET'])
+def get_user_chances():
+    name = request.args.get('name', '').strip()
+    if name:
+        names = load_names()
+        chances = names.get(name, 0)
+        return jsonify({'chances': chances})
+    return jsonify({'chances': 0}), 400
+
 @app.route('/api/winners', methods=['GET'])
 def get_winners_list():
     return jsonify({'winners': load_winners_list()})

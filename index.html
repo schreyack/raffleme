@@ -8,10 +8,22 @@
 </head>
 <body>
     <div class="container">
-                <h1>OVERLAKE LIGHTS 2025 RAFFLE</h1>
+                <h1>OVERLAKE LIGHTS<br>2025 RAFFLE</h1>
         <div id="winner"></div>
-        <div id="chances"></div>
-        <div id="totalPlayers"></div>
+        <table class="stats-table">
+            <tr>
+                <td>Prizes Available:</td>
+                <td id="chances-value"></td>
+            </tr>
+            <tr>
+                <td>Your Entries:</td>
+                <td id="userChances-value"></td>
+            </tr>
+            <tr>
+                <td>Total players:</td>
+                <td id="totalPlayers-value"></td>
+            </tr>
+        </table>
         <div id="spinner" class="spinner"></div>
         <form id="nameForm" onsubmit="event.preventDefault(); submitName(); return false;">
             <label for="name">Enter your name:</label>
