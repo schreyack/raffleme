@@ -17,142 +17,135 @@ import random
 import threading
 import time
 import uuid
-from flask import Flask, request, jsonify, send_from_directory
+from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, Response
+import redis
 
-app = Flask(__name__)
+app = FastAPI()
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="."), name="static")
+
+# Redis connection
+r = redis.Redis(host='redis', port=6379, decode_responses=True)
 
 # Load trivia questions from JSON file
 with open("trivia_questions.json", "r") as f:
     QUESTIONS = json.load(f)
 
 # Trivia questions API endpoint
-@app.route('/api/questions', methods=['GET'])
+@app.get('/api/questions')
 def get_questions():
-    return jsonify(QUESTIONS)
+    return QUESTIONS
 
-NAMES_FILE = 'names.json'
-WINNER_FILE = 'winner.json'
-SELECTING_FILE = 'selecting.json'
-CHANCES_FILE = 'chances.json'
-WINNERS_LIST_FILE = 'winners_list.json'
-GAME_ID_FILE = 'game_id.json'
-
+# Data access functions using Redis
 def load_names():
-    try:
-        with open(NAMES_FILE, 'r') as f:
-            data = json.load(f)
-            if isinstance(data, list):
-                # Migrate old list to dict with 1 chance each
-                names_dict = {name: 1 for name in data}
-                save_names(names_dict)
-                return names_dict
-            return data
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}
+    names = r.hgetall('names')
+    return {k: int(v) for k, v in names.items()}
 
 def save_names(names_dict):
-    with open(NAMES_FILE, 'w') as f:
-        json.dump(names_dict, f)
+    if names_dict:
+        r.hset('names', mapping=names_dict)
+    else:
+        r.delete('names')
 
 def load_winner():
-    try:
-        with open(WINNER_FILE, 'r') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return None
+    winner = r.get('winner')
+    return json.loads(winner) if winner else None
 
 def save_winner(winner):
-    with open(WINNER_FILE, 'w') as f:
-        json.dump(winner, f)
+    r.set('winner', json.dumps(winner))
 
 def load_winners_list():
-    try:
-        with open(WINNERS_LIST_FILE, 'r') as f:
-            data = json.load(f)
-            if not isinstance(data, list):
-                return []
-            return data
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
-
-def load_selecting():
-    try:
-        with open(SELECTING_FILE, 'r') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return False
-
-def save_selecting(selecting):
-    with open(SELECTING_FILE, 'w') as f:
-        json.dump(selecting, f)
-
-def load_chances():
-    try:
-        with open(CHANCES_FILE, 'r') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return 0
-
-def save_chances(chances):
-    with open(CHANCES_FILE, 'w') as f:
-        json.dump(chances, f)
+    return r.lrange('winners_list', 0, -1)
 
 def save_winners_list(winners_list):
-    with open(WINNERS_LIST_FILE, 'w') as f:
-        json.dump(winners_list, f)
+    r.delete('winners_list')
+    if winners_list:
+        r.rpush('winners_list', *winners_list)
+
+def load_selecting():
+    return r.get('selecting') == 'true'
+
+def save_selecting(selecting):
+    r.set('selecting', 'true' if selecting else 'false')
+
+def load_chances():
+    chances = r.get('chances')
+    return int(chances) if chances else 0
+
+def save_chances(chances):
+    r.set('chances', str(chances))
 
 def load_game_id():
-    try:
-        with open(GAME_ID_FILE, 'r') as f:
-            data = json.load(f)
-            return data.get('game_id', str(uuid.uuid4()))
-    except (FileNotFoundError, json.JSONDecodeError):
+    game_id = r.get('game_id')
+    if not game_id:
         game_id = str(uuid.uuid4())
         save_game_id(game_id)
-        return game_id
+    return game_id
 
 def save_game_id(game_id):
-    with open(GAME_ID_FILE, 'w') as f:
-        json.dump({'game_id': game_id}, f)
+    r.set('game_id', game_id)
 
-@app.route('/')
+@app.get('/')
 def index():
-    return send_from_directory('.', 'index.html')
+    return FileResponse('index.html')
 
-@app.route('/manage.html')
+@app.get('/manage.html')
 def manage():
-    return send_from_directory('.', 'manage.html')
+    return FileResponse('manage.html')
 
-@app.route('/<path:path>')
-def static_files(path):
-    return send_from_directory('.', path)
+@app.get('/dashboard.html')
+def dashboard():
+    return FileResponse('dashboard.html')
 
-@app.route('/api/names', methods=['GET'])
+@app.get('/style.css')
+def style():
+    return FileResponse('style.css')
+
+@app.get('/script.js')
+def script():
+    return FileResponse('script.js')
+
+@app.get('/dashboard.js')
+def dashboard_js():
+    return FileResponse('dashboard.js')
+
+@app.get('/manage.js')
+def manage_js():
+    return FileResponse('manage.js')
+
+@app.get('/favicon.ico')
+def favicon():
+    return Response(status_code=204)
+
+@app.get('/api/names')
 def get_names():
-    return jsonify(list(load_names().keys()))
+    return list(load_names().keys())
 
-@app.route('/api/players', methods=['GET'])
+@app.get('/api/players')
 def get_players():
     names = load_names()
     players = [{'name': name, 'chances': chances} for name, chances in names.items()]
-    return jsonify({'players': players})
+    return {'players': players}
 
-@app.route('/api/names', methods=['POST'])
-def add_name():
-    data = request.get_json()
+@app.post('/api/names')
+async def add_name(request: Request):
+    data = await request.json()
     name = data.get('name', '').strip()
     if name:
         names = load_names()
         if name.lower() in [n.lower() for n in names]:
-            return jsonify({'success': False, 'message': 'Name already exists. Please enter a different name.'}), 409
+            return {'success': False, 'message': 'Name already exists. Please enter a different name.'}
         names[name] = 1
         save_names(names)
-        return jsonify({'success': True, 'names': list(names.keys())})
-    return jsonify({'success': False, 'message': 'Name cannot be empty.'}), 400
+        return {'success': True, 'names': list(names.keys())}
+    return {'success': False, 'message': 'Name cannot be empty.'}
 
-@app.route('/api/names/<int:index>', methods=['PUT'])
-def update_name(index):
-    data = request.get_json()
+@app.put('/api/names/{index}')
+async def update_name(index: int, request: Request):
+    data = await request.json()
     new_name = data.get('name', '').strip()
     if new_name:
         names_dict = load_names()
@@ -163,34 +156,34 @@ def update_name(index):
             del names_dict[old_name]
             names_dict[new_name] = chances
             save_names(names_dict)
-            return jsonify({'success': True, 'names': list(names_dict.keys())})
-    return jsonify({'success': False}), 400
+            return {'success': True, 'names': list(names_dict.keys())}
+    return {'success': False}
 
-@app.route('/api/names/<int:index>', methods=['DELETE'])
-def delete_name(index):
+@app.delete('/api/names/{index}')
+def delete_name(index: int):
     names_dict = load_names()
     names_list = list(names_dict.keys())
     if 0 <= index < len(names_list):
         name_to_delete = names_list[index]
         del names_dict[name_to_delete]
         save_names(names_dict)
-        return jsonify({'success': True, 'names': list(names_dict.keys())})
-    return jsonify({'success': False}), 404
+        return {'success': True, 'names': list(names_dict.keys())}
+    return {'success': False}
 
-@app.route('/api/chances', methods=['GET'])
+@app.get('/api/chances')
 def get_chances():
-    return jsonify({'chances': load_chances()})
+    return {'chances': load_chances()}
 
-@app.route('/api/chances', methods=['PUT'])
-def set_chances():
-    data = request.get_json()
+@app.put('/api/chances')
+async def set_chances(request: Request):
+    data = await request.json()
     chances = data.get('chances', 0)
     save_chances(chances)
-    return jsonify({'chances': chances})
+    return {'chances': chances}
 
-@app.route('/api/answer', methods=['POST'])
-def submit_answer():
-    data = request.get_json()
+@app.post('/api/answer')
+async def submit_answer(request: Request):
+    data = await request.json()
     name = data.get('name')
     question_index = data.get('question_index')
     answer = data.get('answer')
@@ -205,11 +198,66 @@ def submit_answer():
                 names[name] += 2
                 save_names(names)
                 print(f"Updated chances for {name}: {names[name]}")
-                return jsonify({'success': True})
+                return {'success': True}
             else:
                 print(f"Name {name} not in names (already won), but answer was correct")
-                return jsonify({'success': True})  # Still mark as correct even if winner already removed
-    return jsonify({'success': False})
+                return {'success': True}  # Still mark as correct even if winner already removed
+    return {'success': False}
+
+@app.get('/api/user-chances')
+def get_user_chances(name: str = None):
+    if name:
+        names = load_names()
+        chances = names.get(name, 0)
+        return {'chances': chances}
+    return {'chances': 0}
+
+@app.get('/api/winners')
+def get_winners_list():
+    return {'winners': load_winners_list()}
+
+@app.get('/api/winner')
+def get_winner():
+    winners = load_winner()
+    selecting = load_selecting()
+    return {'winners': winners, 'selecting': selecting}
+
+@app.post('/api/select-winner')
+def select_winner():
+    global_chances = load_chances()
+    names_dict = load_names()
+    total_user_chances = sum(names_dict.values())
+    if global_chances <= 0 or total_user_chances <= 0:
+        return {'success': False, 'message': 'No chances left to select a winner.'}
+    
+    save_winner([])
+    save_selecting(True)
+    
+    def delayed_selection():
+        time.sleep(20)  # Changed to 20 seconds for trivia
+        names_dict = load_names()
+        total_user_chances = sum(names_dict.values())
+        if names_dict and total_user_chances > 0:
+            pick = random.randint(1, total_user_chances)
+            cumulative = 0
+            winner = None
+            for name, chances in names_dict.items():
+                cumulative += chances
+                if pick <= cumulative:
+                    winner = name
+                    break
+            if winner:
+                winners_list = load_winners_list()
+                winners_list.append(winner)
+                save_winners_list(winners_list)
+                save_winner([winner])
+                global_chances = load_chances()
+                if global_chances > 0:
+                    save_chances(global_chances - 1)
+            save_selecting(False)
+    
+    threading.Thread(target=delayed_selection).start()
+    return {'success': True}
 
 @app.route('/api/user-chances', methods=['GET'])
 def get_user_chances():
@@ -230,51 +278,7 @@ def get_winner():
     selecting = load_selecting()
     return jsonify({'winners': winners, 'selecting': selecting})
 
-@app.route('/api/select-winner', methods=['POST'])
-def select_winner():
-    global_chances = load_chances()
-    names_dict = load_names()
-    total_user_chances = sum(names_dict.values())
-    if global_chances <= 0 or total_user_chances <= 0:
-        return jsonify({'success': False, 'message': 'No chances left to select a winner.'}), 400
-    
-    save_winner([])
-    save_selecting(True)
-    
-    def delayed_selection():
-        time.sleep(20)  # Changed to 20 seconds for trivia
-        names_dict = load_names()
-        total_user_chances = sum(names_dict.values())
-        if names_dict and total_user_chances > 0:
-            pick = random.randint(1, total_user_chances)
-            cumulative = 0
-            winner = None
-            for name, chances in names_dict.items():
-                cumulative += chances
-                if pick <= cumulative:
-                    winner = name
-                    break
-            if winner:
-                del names_dict[winner]
-                save_names(names_dict)
-                save_winner([winner])
-                # Add to winners list
-                winners_list = load_winners_list()
-                winners_list.append(winner)
-                save_winners_list(winners_list)
-                # Decrement global chances
-                current_global = load_chances()
-                save_chances(current_global - 1)
-            else:
-                save_winner([])
-        else:
-            save_winner([])
-        save_selecting(False)
-    
-    threading.Thread(target=delayed_selection).start()
-    return jsonify({'success': True})
-
-@app.route('/api/new-game', methods=['POST'])
+@app.post('/api/new-game')
 def new_game():
     # Clear all data
     save_names({})
@@ -285,11 +289,12 @@ def new_game():
     # Generate new game_id for new game
     new_game_id = str(uuid.uuid4())
     save_game_id(new_game_id)
-    return jsonify({'success': True})
+    return {'success': True}
 
-@app.route('/api/game-id', methods=['GET'])
+@app.get('/api/game-id')
 def get_game_id():
-    return jsonify({'game_id': load_game_id()})
+    return {'game_id': load_game_id()}
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    import uvicorn
+    uvicorn.run(app, host='0.0.0.0', port=8000)
