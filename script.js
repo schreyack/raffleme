@@ -266,6 +266,29 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(err => console.error('Error:', err));
     }, 1000);
+
+    // Poll for game ID changes every 1 second
+    setInterval(() => {
+        fetch('/api/game-id')
+            .then(res => res.json())
+            .then(data => {
+                if (currentServerGameId && data.game_id !== currentServerGameId) {
+                    // Game ID changed - clear localStorage for new game
+                    localStorage.removeItem('raffleEnteredGameId');
+                    localStorage.removeItem('userName');
+                    localStorage.removeItem('currentQuestion');
+                    // Clear the form input
+                    document.getElementById('name').value = '';
+                    // Update current game ID
+                    currentServerGameId = data.game_id;
+                    // Force UI update
+                    updateWinnerDisplay({winners: [], selecting: false});
+                } else if (!currentServerGameId) {
+                    currentServerGameId = data.game_id;
+                }
+            })
+            .catch(err => console.error('Error:', err));
+    }, 1000);
 });
 
 function showTrivia() {
