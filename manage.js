@@ -165,8 +165,7 @@ document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/winners')
         .then(res => res.json())
         .then(data => {
-            // The /api/winners endpoint returns an array directly, not an object
-            currentWinners = data;
+            currentWinners = data.winners || [];
             renderWinnersList(currentWinners);
         })
         .catch(err => console.error('Error:', err));
@@ -316,8 +315,9 @@ setInterval(() => {
     fetch('/api/winners')
         .then(res => res.json())
         .then(data => {
-            if (JSON.stringify(data) !== JSON.stringify(currentWinners)) {
-                currentWinners = data;
+            const newWinners = data.winners || [];
+            if (JSON.stringify(newWinners) !== JSON.stringify(currentWinners)) {
+                currentWinners = newWinners;
                 renderWinnersList(currentWinners);
             }
         })

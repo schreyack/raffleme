@@ -797,3 +797,73 @@ button:active {
     border-radius: 4px;
     font-size: 14px;
 }
+
+/* --- Winner Announcement --- */
+#winner-announcement {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none; /* Allow clicks to go through when hidden */
+    transition: opacity 0.5s ease-in-out;
+}
+
+#winner-announcement.visible {
+    opacity: 1;
+    pointer-events: auto; /* Block clicks when visible */
+}
+
+#winner-announcement-text {
+    font-family: var(--font-heading);
+    font-size: 8vw;
+    color: var(--color-gold);
+    text-shadow: 0 0 20px var(--color-gold), 0 0 40px var(--color-red);
+    transform: scale(0.5);
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+#winner-announcement.visible #winner-announcement-text {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* --- Countdown Timer --- */
+#countdown-timer {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 20px 40px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+#countdown-timer.visible {
+    opacity: 1;
+}
+
+#countdown-text {
+    font-family: var(--font-heading);
+    font-size: 3vw;
+    color: var(--color-gold);
+    text-shadow: 0 0 10px var(--color-gold), 0 0 20px var(--color-red);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}

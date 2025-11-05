@@ -155,98 +155,104 @@ function submitName() {
     }
 }
 
-// Initial game_id fetch
-fetch('/api/game-id')
-    .then(res => res.json())
-    .then(data => {
-        currentServerGameId = data.game_id;
-        // Check if already entered
-        const enteredGameId = localStorage.getItem('raffleEnteredGameId');
-        if (enteredGameId === currentServerGameId) {
-            const messageDiv = document.getElementById('message');
-            messageDiv.textContent = 'You have already entered the raffle!';
-            messageDiv.style.color = '#2196F3';
-            document.getElementById('nameForm').style.display = 'none';
-            // Fetch user chances
-            const userName = localStorage.getItem('userName');
-            if (userName) {
-                fetch(`/api/user-chances?name=${encodeURIComponent(userName)}`)
-                    .then(res => res.json())
-                    .then(data => updateUserChancesDisplay(data.chances))
-                    .catch(err => console.error('Error fetching user chances:', err));
-            }
-        }
-    })
-    .catch(err => console.error('Error fetching game ID:', err));
+document.addEventListener('DOMContentLoaded', function() {
+    // Initial game_id fetch
+    fetch('/api/game-id')
+        .then(res => res.json())
+        .then(data => {
+            currentServerGameId = data.game_id;
+            // ... rest of your logic
+        })
+        .catch(err => console.error('Error fetching game ID:', err));
 
-// Initial winner display
-fetch('/api/winner')
-    .then(res => res.json())
-    .then(data => updateWinnerDisplay(data))
-    .catch(err => console.error('Error:', err));
-
-// Initial chances display
-fetch('/api/chances')
-    .then(res => res.json())
-    .then(data => {
-        currentChances = data.chances;
-        updateChancesDisplay(data.chances);
-        checkRaffleComplete(data.chances);
-    })
-    .catch(err => console.error('Error:', err));
-
-// Poll for winner updates every 1 second
-setInterval(() => {
+    // Initial winner display
     fetch('/api/winner')
         .then(res => res.json())
         .then(data => updateWinnerDisplay(data))
         .catch(err => console.error('Error:', err));
-}, 1000);
 
-// Poll for chances updates every 1 second
-setInterval(() => {
+    // Initial chances display
     fetch('/api/chances')
         .then(res => res.json())
         .then(data => {
-            if (data.chances !== currentChances) {
-                currentChances = data.chances;
-                updateChancesDisplay(data.chances);
-                checkRaffleComplete(data.chances);
-            }
+            currentChances = data.chances;
+            updateChancesDisplay(data.chances);
+            checkRaffleComplete(data.chances);
         })
         .catch(err => console.error('Error:', err));
-}, 1000);
 
-// Initial winners list
-fetch('/api/winners')
-    .then(res => res.json())
-    .then(data => {
-        currentWinners = data.winners;
-        renderWinnersList(data.winners);
-    })
-    .catch(err => console.error('Error:', err));
-
-// Initial names list for total players
-fetch('/api/names')
-    .then(res => res.json())
-    .then(data => {
-        currentNames = data;
-        updateTotalPlayersDisplay(data.length);
-    })
-    .catch(err => console.error('Error:', err));
-
-// Poll for winners list updates every 1 second
-setInterval(() => {
+    // Initial winners list
     fetch('/api/winners')
         .then(res => res.json())
         .then(data => {
-            if (JSON.stringify(data.winners) !== JSON.stringify(currentWinners)) {
-                currentWinners = data.winners;
-                renderWinnersList(data.winners);
-            }
+            currentWinners = data.winners;
+            renderWinnersList(data.winners);
         })
         .catch(err => console.error('Error:', err));
-}, 1000);
+
+    // Initial names list for total players
+    fetch('/api/names')
+        .then(res => res.json())
+        .then(data => {
+            currentNames = data;
+            updateTotalPlayersDisplay(data.length);
+        })
+        .catch(err => console.error('Error:', err));
+
+    // Poll for winner updates every 1 second
+    setInterval(() => {
+        fetch('/api/winner')
+            .then(res => res.json())
+            .then(data => updateWinnerDisplay(data))
+            .catch(err => console.error('Error:', err));
+    }, 1000);
+
+    // Poll for chances updates every 1 second
+    setInterval(() => {
+        fetch('/api/chances')
+            .then(res => res.json())
+            .then(data => {
+                if (data.chances !== currentChances) {
+                    currentChances = data.chances;
+                    updateChancesDisplay(data.chances);
+                    checkRaffleComplete(data.chances);
+                }
+            })
+            .catch(err => console.error('Error:', err));
+    }, 1000);
+
+    // Poll for winners list updates every 1 second
+    setInterval(() => {
+        fetch('/api/winners')
+            .then(res => res.json())
+            .then(data => {
+                const newWinners = data.winners || [];
+                if (JSON.stringify(newWinners) !== JSON.stringify(currentWinners)) {
+                    // Announce the newest winner
+                    if (newWinners.length > currentWinners.length) {
+                        const newWinnerName = newWinners[newWinners.length - 1];
+                        announceWinner(newWinnerName);
+                    }
+                    currentWinners = newWinners;
+                    renderWinnersList(currentWinners);
+                }
+            })
+            .catch(err => console.error('Error:', err));
+    }, 1000);
+
+    // Poll for names updates every 1 second
+    setInterval(() => {
+        fetch('/api/names')
+            .then(res => res.json())
+            .then(data => {
+                if (JSON.stringify(data) !== JSON.stringify(currentNames)) {
+                    currentNames = data;
+                    updateTotalPlayersDisplay(data.length);
+                }
+            })
+            .catch(err => console.error('Error:', err));
+    }, 1000);
+});
 
 function showTrivia() {
     const userName = localStorage.getItem('userName');
@@ -346,3 +352,15 @@ setInterval(() => {
         })
         .catch(err => console.error('Error:', err));
 }, 1000);
+
+function announceWinner(winnerName) {
+    const announcement = document.getElementById('winner-announcement');
+    const text = document.getElementById('winner-announcement-text');
+
+    text.textContent = winnerName;
+    announcement.classList.add('visible');
+
+    setTimeout(() => {
+        announcement.classList.remove('visible');
+    }, 5000); // Display for 5 seconds
+}

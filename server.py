@@ -119,11 +119,9 @@ def get_names():
 
 @app.route('/api/players', methods=['GET'])
 def get_players():
-    return jsonify(load_names())
-
-@app.route('/api/winners', methods=['GET'])
-def get_winners():
-    return jsonify(load_winners_list())
+    names = load_names()
+    players = [{'name': name, 'chances': chances} for name, chances in names.items()]
+    return jsonify({'players': players})
 
 @app.route('/api/names', methods=['POST'])
 def add_name():
