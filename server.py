@@ -7,6 +7,19 @@ from flask import Flask, request, jsonify, send_from_directory
 
 app = Flask(__name__)
 
+QUESTIONS = [
+    {"question": "What color is Santa's suit traditionally?", "options": ["Red", "Blue", "Green", "Yellow"], "correct": 0},
+    {"question": "True or False: Santa Claus is based on Saint Nicholas.", "options": ["True", "False"], "correct": 0},
+    {"question": "How many reindeer does Santa have?", "options": ["8", "9", "10", "7"], "correct": 1},
+    {"question": "What is the name of Santa's reindeer that starts with 'R'?", "options": ["Rudolph", "Dasher", "Blitzen", "Cupid"], "correct": 0},
+    {"question": "In what country did Christmas trees originate?", "options": ["Germany", "USA", "England", "France"], "correct": 0},
+    {"question": "What does 'Xmas' stand for?", "options": ["Christmas", "Xylophone", "Xenon", "Xerox"], "correct": 0},
+    {"question": "What is the traditional Christmas meal in the UK?", "options": ["Turkey", "Ham", "Roast Beef", "Fish"], "correct": 0},
+    {"question": "Which Christmas carol contains the line 'Silent night, holy night'?", "options": ["Silent Night", "Jingle Bells", "White Christmas", "The Christmas Song"], "correct": 0},
+    {"question": "What is the name of the Grinch's dog?", "options": ["Max", "Rex", "Spot", "Buddy"], "correct": 0},
+    {"question": "How many ghosts visit Scrooge in A Christmas Carol?", "options": ["3", "4", "5", "2"], "correct": 1},
+]
+
 NAMES_FILE = 'names.json'
 WINNER_FILE = 'winner.json'
 SELECTING_FILE = 'selecting.json'
@@ -17,13 +30,19 @@ GAME_ID_FILE = 'game_id.json'
 def load_names():
     try:
         with open(NAMES_FILE, 'r') as f:
-            return json.load(f)
+            data = json.load(f)
+            if isinstance(data, list):
+                # Migrate old list to dict with 1 chance each
+                names_dict = {name: 1 for name in data}
+                save_names(names_dict)
+                return names_dict
+            return data
     except (FileNotFoundError, json.JSONDecodeError):
-        return []
+        return {}
 
-def save_names(names):
+def save_names(names_dict):
     with open(NAMES_FILE, 'w') as f:
-        json.dump(names, f)
+        json.dump(names_dict, f)
 
 def load_winner():
     try:
@@ -97,7 +116,7 @@ def static_files(path):
 
 @app.route('/api/names', methods=['GET'])
 def get_names():
-    return jsonify(load_names())
+    return jsonify(list(load_names().keys()))
 
 @app.route('/api/names', methods=['POST'])
 def add_name():
@@ -107,9 +126,9 @@ def add_name():
         names = load_names()
         if name.lower() in [n.lower() for n in names]:
             return jsonify({'success': False, 'message': 'Name already exists. Please enter a different name.'}), 409
-        names.append(name)
+        names[name] = 1
         save_names(names)
-        return jsonify({'success': True, 'names': names})
+        return jsonify({'success': True, 'names': list(names.keys())})
     return jsonify({'success': False, 'message': 'Name cannot be empty.'}), 400
 
 @app.route('/api/names/<int:index>', methods=['PUT'])
@@ -117,20 +136,26 @@ def update_name(index):
     data = request.get_json()
     new_name = data.get('name', '').strip()
     if new_name:
-        names = load_names()
-        if 0 <= index < len(names):
-            names[index] = new_name
-            save_names(names)
-            return jsonify({'success': True, 'names': names})
+        names_dict = load_names()
+        names_list = list(names_dict.keys())
+        if 0 <= index < len(names_list):
+            old_name = names_list[index]
+            chances = names_dict[old_name]
+            del names_dict[old_name]
+            names_dict[new_name] = chances
+            save_names(names_dict)
+            return jsonify({'success': True, 'names': list(names_dict.keys())})
     return jsonify({'success': False}), 400
 
 @app.route('/api/names/<int:index>', methods=['DELETE'])
 def delete_name(index):
-    names = load_names()
-    if 0 <= index < len(names):
-        names.pop(index)
-        save_names(names)
-        return jsonify({'success': True, 'names': names})
+    names_dict = load_names()
+    names_list = list(names_dict.keys())
+    if 0 <= index < len(names_list):
+        name_to_delete = names_list[index]
+        del names_dict[name_to_delete]
+        save_names(names_dict)
+        return jsonify({'success': True, 'names': list(names_dict.keys())})
     return jsonify({'success': False}), 404
 
 @app.route('/api/chances', methods=['GET'])
@@ -144,6 +169,29 @@ def set_chances():
     save_chances(chances)
     return jsonify({'chances': chances})
 
+@app.route('/api/answer', methods=['POST'])
+def submit_answer():
+    data = request.get_json()
+    name = data.get('name')
+    question_index = data.get('question_index')
+    answer = data.get('answer')
+    print(f"Trivia answer received: name={name}, question_index={question_index}, answer={answer}")
+    if question_index is not None and answer is not None and 0 <= question_index < len(QUESTIONS):
+        correct = QUESTIONS[question_index]['correct']
+        print(f"Correct answer for question {question_index}: {correct}")
+        if correct == answer:
+            names = load_names()
+            print(f"Names: {names}")
+            if name in names:
+                names[name] += 2
+                save_names(names)
+                print(f"Updated chances for {name}: {names[name]}")
+                return jsonify({'success': True})
+            else:
+                print(f"Name {name} not in names (already won), but answer was correct")
+                return jsonify({'success': True})  # Still mark as correct even if winner already removed
+    return jsonify({'success': False})
+
 @app.route('/api/winners', methods=['GET'])
 def get_winners_list():
     return jsonify({'winners': load_winners_list()})
@@ -156,26 +204,41 @@ def get_winner():
 
 @app.route('/api/select-winner', methods=['POST'])
 def select_winner():
-    chances = load_chances()
-    if chances <= 0:
+    global_chances = load_chances()
+    names_dict = load_names()
+    total_user_chances = sum(names_dict.values())
+    if global_chances <= 0 or total_user_chances <= 0:
         return jsonify({'success': False, 'message': 'No chances left to select a winner.'}), 400
     
     save_winner([])
     save_selecting(True)
     
     def delayed_selection():
-        time.sleep(5)
-        names = load_names()
-        if names:
-            winner = random.choice(names)
-            save_winner([winner])
-            # Add to winners list
-            winners_list = load_winners_list()
-            winners_list.append(winner)
-            save_winners_list(winners_list)
-            # Decrement chances
-            current_chances = load_chances()
-            save_chances(current_chances - 1)
+        time.sleep(20)  # Changed to 20 seconds for trivia
+        names_dict = load_names()
+        total_user_chances = sum(names_dict.values())
+        if names_dict and total_user_chances > 0:
+            pick = random.randint(1, total_user_chances)
+            cumulative = 0
+            winner = None
+            for name, chances in names_dict.items():
+                cumulative += chances
+                if pick <= cumulative:
+                    winner = name
+                    break
+            if winner:
+                del names_dict[winner]
+                save_names(names_dict)
+                save_winner([winner])
+                # Add to winners list
+                winners_list = load_winners_list()
+                winners_list.append(winner)
+                save_winners_list(winners_list)
+                # Decrement global chances
+                current_global = load_chances()
+                save_chances(current_global - 1)
+            else:
+                save_winner([])
         else:
             save_winner([])
         save_selecting(False)
@@ -186,7 +249,7 @@ def select_winner():
 @app.route('/api/new-game', methods=['POST'])
 def new_game():
     # Clear all data
-    save_names([])
+    save_names({})
     save_winners_list([])
     save_chances(5)
     save_winner([])

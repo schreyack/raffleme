@@ -19,11 +19,21 @@
             <button type="button" onclick="submitName()">Submit</button>
         </form>
         <div id="message"></div>
+        <div id="trivia" style="display: none;">
+            <p id="triviaQuestion"></p>
+            <form id="triviaForm">
+                <input type="radio" name="answer" value="0"> <label id="option0"></label><br>
+                <input type="radio" name="answer" value="1"> <label id="option1"></label><br>
+                <input type="radio" name="answer" value="2"> <label id="option2"></label><br>
+                <input type="radio" name="answer" value="3"> <label id="option3"></label><br>
+                <button type="button" onclick="submitTrivia()">Submit Answer</button>
+            </form>
+        </div>
         <div id="winnersList" style="display: none;">
             <h2>Raffle Complete! Winners:</h2>
             <ul id="winnersUl"></ul>
         </div>
     </div>
-    <script src="script.js?v=9"></script>
+    <script src="script.js?v=14"></script>
 </body>
 </html>
