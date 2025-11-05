@@ -120,7 +120,7 @@ h2 {
     border-bottom: none;
 }
 
-.stats-table td {
+.dashboard-container .stats-table td {
     padding: 20px 25px;
     text-align: left;
     font-weight: 500;
@@ -128,7 +128,7 @@ h2 {
     font-size: 1.6em;
 }
 
-.stats-table th {
+.dashboard-container .stats-table th {
     padding: 25px 20px;
     text-align: center;
     font-weight: 700;
@@ -139,18 +139,24 @@ h2 {
     letter-spacing: 1px;
 }
 
+.stats-table td {
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 500;
+    color: var(--color-dark);
+}
+
 .stats-table td:first-child {
     font-weight: 600;
     color: var(--color-red);
     width: 60%;
-    font-size: 1.7em;
 }
 
 .stats-table td:last-child {
     text-align: right;
     font-weight: 700;
     color: var(--color-green);
-    font-size: 2.0em;
+    font-size: 1.1em;
 }
 
 label {
