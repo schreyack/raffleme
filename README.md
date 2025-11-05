@@ -66,3 +66,7 @@ Data is stored in JSON files in the application directory. For persistent storag
 - Backend: Flask (Python)
 - Frontend: HTML, CSS, JavaScript
 - Container: Docker
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
