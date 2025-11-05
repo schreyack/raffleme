@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OVERLAKE LIGHTS 2025 RAFFLE Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container dashboard-container">
+        <h1>OVERLAKE LIGHTS<br>2025 RAFFLE</h1>
+        <div class="dashboard-layout">
+            <div class="stats-column">
+                <table class="stats-table">
+                    <tr>
+                        <td>Prizes Available:</td>
+                        <td id="chances-value"></td>
+                    </tr>
+                    <tr>
+                        <td>Total players:</td>
+                        <td id="totalPlayers-value"></td>
+                    </tr>
+                </table>
+                <table class="stats-table" id="topPlayersTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th colspan="3">Top Players by Entries</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topPlayersBody">
+                    </tbody>
+                </table>
+            </div>
+            <div class="winners-column">
+                <h3>Winners</h3>
+                <ul id="winnersList"></ul>
+            </div>
+            <div class="qr-column">
+                <div class="dashboard-content">
+                    <h2>Scan to Enter the Raffle</h2>
+                    <div class="qr-code-container">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=http://raffle.micasainnovations.com" alt="QR Code to Raffle Site">
+                    </div>
+                    <p>Or visit: <a href="http://raffle.micasainnovations.com">raffle.micasainnovations.com</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function updateChancesDisplay(chances) {
+            const chancesValue = document.getElementById('chances-value');
+            chancesValue.textContent = chances;
+        }
+
+        function updateTotalPlayersDisplay(totalPlayers) {
+            const totalPlayersValue = document.getElementById('totalPlayers-value');
+            totalPlayersValue.textContent = totalPlayers;
+        }
+
+        function updateTopPlayersDisplay(namesData) {
+            const topPlayersTable = document.getElementById('topPlayersTable');
+            const topPlayersBody = document.getElementById('topPlayersBody');
+            topPlayersBody.innerHTML = '';
+
+            // Get entries, sort by chances descending
+            const entries = Object.entries(namesData).map(([name, chances]) => ({ name, chances: parseInt(chances) }));
+            entries.sort((a, b) => b.chances - a.chances);
+
+            // Check if all have the same chances
+            const allSame = entries.length > 1 && entries.every(entry => entry.chances === entries[0].chances);
+
+            if (allSame || entries.length === 0) {
+                topPlayersTable.style.display = 'none';
+                return;
+            }
+
+            // Take top 10
+            const top10 = entries.slice(0, 10);
+
+            top10.forEach((entry, index) => {
+                const tr = document.createElement('tr');
+                const tdRank = document.createElement('td');
+                const tdName = document.createElement('td');
+                const tdChances = document.createElement('td');
+
+                tdRank.textContent = index + 1;
+                tdRank.style.width = '50px';
+                tdRank.style.textAlign = 'center';
+                tdName.textContent = entry.name;
+                tdName.style.width = '200px';
+                tdChances.textContent = entry.chances;
+                tdChances.style.width = '100px';
+                tdChances.style.textAlign = 'center';
+
+                tr.appendChild(tdRank);
+                tr.appendChild(tdName);
+                tr.appendChild(tdChances);
+                topPlayersBody.appendChild(tr);
+            });
+
+            topPlayersTable.style.display = 'table';
+        }
+
+        function updateWinnersDisplay(winners) {
+            const winnersList = document.getElementById('winnersList');
+            winnersList.innerHTML = '';
+            winners.forEach((winner, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${index + 1}. ${winner}`;
+                winnersList.appendChild(li);
+            });
+        }
+
+        // Fetch data from server
+        function fetchData() {
+            Promise.all([
+                fetch('/api/chances').then(response => response.json()),
+                fetch('/api/players').then(response => response.json()),
+                fetch('/api/winners').then(response => response.json())
+            ])
+            .then(([chancesData, playersData, winnersData]) => {
+                updateChancesDisplay(chancesData.chances || 0);
+                updateTotalPlayersDisplay(Object.keys(playersData).length || 0);
+                updateTopPlayersDisplay(playersData);
+                updateWinnersDisplay(winnersData);
+            })
+            .catch(error => console.error('Error fetching data:', error));
+        }
+
+        // Update every 5 seconds
+        setInterval(fetchData, 5000);
+        fetchData(); // Initial fetch
+    </script>
+</body>
+</html>

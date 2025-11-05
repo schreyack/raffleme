@@ -74,6 +74,7 @@ function updateUserChancesDisplay(chances) {
 }
 
 function renderWinnersList(winners) {
+    if (!Array.isArray(winners)) winners = [];
     const winnersUl = document.getElementById('winnersUl');
     winnersUl.innerHTML = '';
     winners.forEach((winner, index) => {

@@ -51,6 +51,16 @@ def save_winner(winner):
     with open(WINNER_FILE, 'w') as f:
         json.dump(winner, f)
 
+def load_winners_list():
+    try:
+        with open(WINNERS_LIST_FILE, 'r') as f:
+            data = json.load(f)
+            if not isinstance(data, list):
+                return []
+            return data
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
 def load_selecting():
     try:
         with open(SELECTING_FILE, 'r') as f:
@@ -72,13 +82,6 @@ def load_chances():
 def save_chances(chances):
     with open(CHANCES_FILE, 'w') as f:
         json.dump(chances, f)
-
-def load_winners_list():
-    try:
-        with open(WINNERS_LIST_FILE, 'r') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
 
 def save_winners_list(winners_list):
     with open(WINNERS_LIST_FILE, 'w') as f:
@@ -113,6 +116,14 @@ def static_files(path):
 @app.route('/api/names', methods=['GET'])
 def get_names():
     return jsonify(list(load_names().keys()))
+
+@app.route('/api/players', methods=['GET'])
+def get_players():
+    return jsonify(load_names())
+
+@app.route('/api/winners', methods=['GET'])
+def get_winners():
+    return jsonify(load_winners_list())
 
 @app.route('/api/names', methods=['POST'])
 def add_name():

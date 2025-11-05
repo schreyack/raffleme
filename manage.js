@@ -40,24 +40,24 @@ let currentChances = 0;
 let currentWinners = [];
 
 function renderWinnersList(winners) {
-    const winnersTableBody = document.getElementById('winnersTableBody');
-    winnersTableBody.innerHTML = '';
+    if (!Array.isArray(winners)) winners = [];
+    const winnersTable = document.getElementById('winnersTable');
+    winnersTable.innerHTML = '';
     winners.forEach((winner, index) => {
         const tr = document.createElement('tr');
-        const tdNumber = document.createElement('td');
+        const tdLabel = document.createElement('td');
         const tdName = document.createElement('td');
         
-        tdNumber.textContent = `${index + 1}.`;
+        tdLabel.textContent = 'Winner ' + (index + 1) + ':';
         tdName.textContent = winner;
         
-        tr.appendChild(tdNumber);
+        tr.appendChild(tdLabel);
         tr.appendChild(tdName);
-        winnersTableBody.appendChild(tr);
+        winnersTable.appendChild(tr);
     });
 }
-
 var countdownInterval = null;
-var countdown = 5;
+var countdown = 20;
 
 function updateWinnerDisplay(data) {
     const winners = data.winners || [];
@@ -65,7 +65,7 @@ function updateWinnerDisplay(data) {
     const winnerDiv = document.getElementById('winner');
     if (selecting) {
         if (!countdownInterval) {
-            countdown = 5;
+            countdown = 20;
             countdownInterval = setInterval(() => {
                 countdown--;
                 if (countdown <= 0) {
@@ -135,75 +135,146 @@ function deleteName(index) {
         .catch(err => console.error('Error:', err));
 }
 
-document.getElementById('selectWinner').addEventListener('click', function() {
-    const button = document.getElementById('selectWinner');
-    
-    // Disable button during selection
-    button.disabled = true;
-    button.textContent = 'Selecting...';
-    
-    fetch('/api/select-winner', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-    })
+document.addEventListener('DOMContentLoaded', function() {
+    // Initial render of names
+    fetch('/api/names')
+        .then(res => res.json())
+        .then(names => {
+            currentNames = names;
+            renderNameList(names);
+        })
+        .catch(err => console.error('Error:', err));
+
+    // Initial winner display
+    fetch('/api/winner')
+        .then(res => res.json())
+        .then(data => updateWinnerDisplay(data))
+        .catch(err => console.error('Error:', err));
+
+    // Initial chances
+    fetch('/api/chances')
         .then(res => res.json())
         .then(data => {
-            if (data.success) {
-                // Re-enable button after a short delay
-                setTimeout(() => {
-                    button.disabled = false;
-                    button.textContent = '🎲 Select Winner';
-                }, 2000);
-            } else {
-                alert(data.message || 'Cannot select winner.');
-                button.disabled = false;
-                button.textContent = '🎲 Select Winner';
-            }
+            currentChances = data.chances;
+            document.getElementById('chancesLeft').value = data.chances;
+            updateChancesDisplay(data.chances);
         })
-        .catch(err => {
-            console.error('Error:', err);
-            button.disabled = false;
-            button.textContent = '🎲 Select Winner';
-        });
-});
+        .catch(err => console.error('Error:', err));
 
-document.getElementById('addNameBtn').addEventListener('click', function() {
-    const newNameInput = document.getElementById('newName');
-    const newName = newNameInput.value.trim();
-    if (newName) {
-        fetch('/api/names', {
+    // Initial winners list
+    fetch('/api/winners')
+        .then(res => res.json())
+        .then(data => {
+            // The /api/winners endpoint returns an array directly, not an object
+            currentWinners = data;
+            renderWinnersList(currentWinners);
+        })
+        .catch(err => console.error('Error:', err));
+
+    // Select winner button
+    document.getElementById('selectWinner').addEventListener('click', function() {
+        const button = document.getElementById('selectWinner');
+        
+        // Disable button during selection
+        button.disabled = true;
+        button.textContent = 'Selecting...';
+        
+        fetch('/api/select-winner', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: newName })
+            body: JSON.stringify({})
         })
-        .then(res => {
-            if (!res.ok) {
-                return res.json().then(err => { throw err; });
-            }
-            return res.json();
-        })
-        .then(data => {
-            if (data.success) {
-                renderNameList(data.names);
-                newNameInput.value = '';
-            }
-        })
-        .catch(err => {
-            alert(err.message || 'Failed to add name.');
-            console.error('Error:', err);
-        });
-    }
-});
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Re-enable button after a short delay
+                    setTimeout(() => {
+                        button.disabled = false;
+                        button.textContent = '🎲 Select Winner';
+                    }, 2000);
+                } else {
+                    alert(data.message || 'Cannot select winner.');
+                    button.disabled = false;
+                    button.textContent = '🎲 Select Winner';
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                button.disabled = false;
+                button.textContent = '🎲 Select Winner';
+            });
+    });
 
-// Initial render of names
-fetch('/api/names')
-    .then(res => res.json())
-    .then(names => {
-        currentNames = names;
-        renderNameList(names);
-    })
-    .catch(err => console.error('Error:', err));
+    // Add name button
+    document.getElementById('addNameBtn').addEventListener('click', function() {
+        const newNameInput = document.getElementById('newName');
+        const newName = newNameInput.value.trim();
+        if (newName) {
+            fetch('/api/names', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newName })
+            })
+            .then(res => {
+                if (!res.ok) {
+                    return res.json().then(err => { throw err; });
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    renderNameList(data.names);
+                    newNameInput.value = '';
+                }
+            })
+            .catch(err => {
+                alert(err.message || 'Failed to add name.');
+                console.error('Error:', err);
+            });
+        }
+    });
+
+    // Update chances when input changes
+    document.getElementById('chancesLeft').addEventListener('change', function() {
+        const newChances = parseInt(this.value) || 0;
+        fetch('/api/chances', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chances: newChances })
+        })
+        .then(res => res.json())
+        .then(data => {
+            updateChancesDisplay(data.chances);
+        })
+        .catch(err => console.error('Error:', err));
+    });
+
+    // New Game button
+    document.getElementById('newGameBtn').addEventListener('click', function() {
+        if (confirm('Are you sure you want to start a new game? This will clear all names and winners.')) {
+            fetch('/api/new-game', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('New game started! All data has been cleared.');
+                    document.getElementById('chancesLeft').value = 5;
+                    // The polling will update the UI automatically
+                }
+            })
+            .catch(err => console.error('Error:', err));
+        }
+    });
+
+    // Configuration panel toggle
+    document.getElementById('configBtn').addEventListener('click', function() {
+        const configPanel = document.getElementById('configPanel');
+        configPanel.style.display = configPanel.style.display === 'none' ? 'block' : 'none';
+    });
+});
 
 // Poll for names updates every 1 second
 setInterval(() => {
@@ -218,12 +289,6 @@ setInterval(() => {
         .catch(err => console.error('Error:', err));
 }, 1000);
 
-// Initial winner display
-fetch('/api/winner')
-    .then(res => res.json())
-    .then(data => updateWinnerDisplay(data))
-    .catch(err => console.error('Error:', err));
-
 // Poll for winner updates every 1 second
 setInterval(() => {
     fetch('/api/winner')
@@ -232,16 +297,6 @@ setInterval(() => {
         .catch(err => console.error('Error:', err));
 }, 1000);
 
-// Initial chances
-fetch('/api/chances')
-    .then(res => res.json())
-    .then(data => {
-        currentChances = data.chances;
-        document.getElementById('chancesLeft').value = data.chances;
-        updateChancesDisplay(data.chances);
-    })
-    .catch(err => console.error('Error:', err));
-
 // Poll for chances updates every 1 second
 setInterval(() => {
     fetch('/api/chances')
@@ -249,72 +304,22 @@ setInterval(() => {
         .then(data => {
             if (data.chances !== currentChances) {
                 currentChances = data.chances;
-                document.getElementById('chancesLeft').value = data.chances;
+                document.getElementById('chancesLeft').value = data.chanses;
                 updateChancesDisplay(data.chances);
             }
         })
         .catch(err => console.error('Error:', err));
 }, 1000);
 
-// Initial winners list
-fetch('/api/winners')
-    .then(res => res.json())
-    .then(data => {
-        currentWinners = data.winners;
-        renderWinnersList(data.winners);
-    })
-    .catch(err => console.error('Error:', err));
-
 // Poll for winners list updates every 1 second
 setInterval(() => {
     fetch('/api/winners')
         .then(res => res.json())
         .then(data => {
-            if (JSON.stringify(data.winners) !== JSON.stringify(currentWinners)) {
-                currentWinners = data.winners;
-                renderWinnersList(data.winners);
+            if (JSON.stringify(data) !== JSON.stringify(currentWinners)) {
+                currentWinners = data;
+                renderWinnersList(currentWinners);
             }
         })
         .catch(err => console.error('Error:', err));
 }, 1000);
-
-// Update chances when input changes
-document.getElementById('chancesLeft').addEventListener('change', function() {
-    const newChances = parseInt(this.value) || 0;
-    fetch('/api/chances', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chances: newChances })
-    })
-    .then(res => res.json())
-    .then(data => {
-        updateChancesDisplay(data.chances);
-    })
-    .catch(err => console.error('Error:', err));
-});
-
-// New Game button
-document.getElementById('newGameBtn').addEventListener('click', function() {
-    if (confirm('Are you sure you want to start a new game? This will clear all names and winners.')) {
-        fetch('/api/new-game', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({})
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                alert('New game started! All data has been cleared.');
-                document.getElementById('chancesLeft').value = 5;
-                // The polling will update the UI automatically
-            }
-        })
-        .catch(err => console.error('Error:', err));
-    }
-});
-
-// Configuration panel toggle
-document.getElementById('configBtn').addEventListener('click', function() {
-    const configPanel = document.getElementById('configPanel');
-    configPanel.style.display = configPanel.style.display === 'none' ? 'block' : 'none';
-});
