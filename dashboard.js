@@ -198,13 +198,13 @@ function startCountdown() {
     const textElement = document.getElementById('countdown-text');
 
     countdown = 20;
-    textElement.textContent = `Winner Selection in: ${countdown}`;
+    textElement.textContent = `Time Remaining: ${countdown} seconds`;
     countdownElement.classList.add('visible');
 
     countdownInterval = setInterval(() => {
         countdown--;
         if (countdown > 0) {
-            textElement.textContent = `Winner Selection in: ${countdown}`;
+            textElement.textContent = `Time Remaining: ${countdown} seconds`;
         } else {
             stopCountdown();
         }

@@ -218,6 +218,40 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     });
 
+    // Trivia question button
+    document.getElementById('triviaQuestion').addEventListener('click', function() {
+        const button = document.getElementById('triviaQuestion');
+        
+        // Disable button during trivia round
+        button.disabled = true;
+        button.textContent = 'Trivia Active...';
+        
+        fetch('/api/trivia-round', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Re-enable button after a short delay
+                    setTimeout(() => {
+                        button.disabled = false;
+                        button.textContent = '❓ Trivia Question';
+                    }, 2000);
+                } else {
+                    alert(data.message || 'Cannot start trivia round.');
+                    button.disabled = false;
+                    button.textContent = '❓ Trivia Question';
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                button.disabled = false;
+                button.textContent = '❓ Trivia Question';
+            });
+    });
+
     // Add name button
     document.getElementById('addNameBtn').addEventListener('click', function() {
         const newNameInput = document.getElementById('newName');

@@ -259,6 +259,18 @@ def select_winner():
     threading.Thread(target=delayed_selection).start()
     return {'success': True}
 
+@app.post('/api/trivia-round')
+def trivia_round():
+    # Start a trivia round without selecting a winner
+    save_selecting(True)
+    
+    def end_trivia_round():
+        time.sleep(20)  # 20 seconds for trivia round
+        save_selecting(False)
+    
+    threading.Thread(target=end_trivia_round).start()
+    return {'success': True}
+
 @app.post('/api/new-game')
 def new_game():
     # Clear all data
