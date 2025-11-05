@@ -381,6 +381,13 @@ button:active {
     text-align: left;
 }
 
+#winnerSettings {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
 #addNameSection {
     display: flex;
     gap: 10px;
@@ -486,8 +493,7 @@ button:active {
 }
 
 #selectWinner {
-    display: block;
-    margin: 0 auto 20px;
+    flex: 1;
     background-color: var(--color-green);
     color: white;
     padding: 12px 24px;
@@ -497,10 +503,39 @@ button:active {
     font-size: 16px;
     font-weight: 600;
     font-family: var(--font-body);
+    max-width: 200px;
 }
 
 #selectWinner:hover {
     background-color: #0f4620;
+}
+
+#triviaButton {
+    flex: 1;
+    background-color: var(--color-gold);
+    color: var(--color-dark);
+    padding: 12px 24px;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    max-width: 200px;
+}
+
+#triviaButton:hover {
+    background-color: #b8860b;
+}
+
+#selectWinner:disabled, #triviaButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #666;
+}
+
+#selectWinner:disabled:hover, #triviaButton:disabled:hover {
+    background-color: #666;
 }
 
 #resetButton {
@@ -958,4 +993,14 @@ button:active {
     0% { transform: scale(1); }
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
+}
+
+#winner.countdown-active {
+    font-family: var(--font-heading);
+    font-size: 2.5vw;
+    color: var(--color-gold);
+    text-shadow: 0 0 10px var(--color-gold), 0 0 20px var(--color-red);
+    animation: pulse 2s infinite;
+    text-align: center;
+    margin: 20px 0;
 }

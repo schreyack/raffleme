@@ -89,14 +89,24 @@ function updateWinnerDisplay(data) {
                 updateWinnerDisplay({winners: [], selecting: true});
             }, 1000);
         }
-        winnerDiv.innerHTML = `Selecting Winner In:<br><span class="countdown-number">${countdown}</span>`;
+        winnerDiv.innerHTML = `Time Remaining: <span class="countdown-number">${countdown}</span> seconds`;
         winnerDiv.style.display = 'block';
+        winnerDiv.classList.add('countdown-active');
+        
+        // Disable both buttons during countdown
+        document.getElementById('selectWinner').disabled = true;
+        document.getElementById('triviaButton').disabled = true;
     } else {
         if (countdownInterval) {
             clearInterval(countdownInterval);
             countdownInterval = null;
         }
         winnerDiv.style.display = 'none';
+        winnerDiv.classList.remove('countdown-active');
+        
+        // Re-enable both buttons when countdown ends
+        document.getElementById('selectWinner').disabled = false;
+        document.getElementById('triviaButton').disabled = false;
     }
 }
 
@@ -219,8 +229,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Trivia question button
-    document.getElementById('triviaQuestion').addEventListener('click', function() {
-        const button = document.getElementById('triviaQuestion');
+    document.getElementById('triviaButton').addEventListener('click', function() {
+        const button = document.getElementById('triviaButton');
         
         // Disable button during trivia round
         button.disabled = true;
