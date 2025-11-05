@@ -572,17 +572,47 @@ button:active {
 
 .dashboard-content {
     text-align: center;
-    padding: 10px;
+    padding: 15px;
+}
+
+.dashboard-content h2 {
+    font-family: var(--font-heading);
+    color: var(--color-red);
+    font-size: 2.5em;
+    margin-bottom: 25px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
 }
 
 .qr-code-container {
-    margin: 20px 0;
+    margin: 30px 0;
 }
 
 .qr-code-container img {
-    border: 2px solid var(--color-gold);
+    border: 3px solid var(--color-gold);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
+    width: 300px;
+    height: 300px;
+}
+
+.dashboard-content p {
+    font-size: 1.6em;
+    font-weight: 600;
+    color: var(--color-dark);
+    margin-top: 25px;
+}
+
+.dashboard-content a {
+    color: var(--color-red);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.4em;
+}
+
+.dashboard-content a:hover {
+    text-decoration: underline;
 }
 
 /* --- Responsive --- */
