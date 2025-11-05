@@ -3,6 +3,8 @@ var countdown = 5;
 var lastWinner = null;
 var currentChances = 0;
 var currentWinners = [];
+var currentNames = [];
+var currentServerGameId = null;
 
 // Test if the function is defined
 window.testFunction = function() {
@@ -43,6 +45,12 @@ function updateChancesDisplay(chances) {
     chancesDiv.style.display = chances > 0 ? 'block' : 'none';
 }
 
+function updateTotalPlayersDisplay(totalPlayers) {
+    const totalPlayersDiv = document.getElementById('totalPlayers');
+    totalPlayersDiv.textContent = `Total players: ${totalPlayers}`;
+    totalPlayersDiv.style.display = 'block';
+}
+
 function renderWinnersList(winners) {
     const winnersUl = document.getElementById('winnersUl');
     winnersUl.innerHTML = '';
@@ -63,8 +71,11 @@ function checkRaffleComplete(chances) {
         document.getElementById('message').style.display = 'none';
         document.getElementById('winnersList').style.display = 'block';
     } else {
-        // Show form
-        document.getElementById('nameForm').style.display = 'block';
+        // Show form only if not already entered for this game
+        const enteredGameId = localStorage.getItem('raffleEnteredGameId');
+        if (enteredGameId !== currentServerGameId) {
+            document.getElementById('nameForm').style.display = 'block';
+        }
         document.getElementById('winnersList').style.display = 'none';
     }
 }
@@ -72,6 +83,15 @@ function checkRaffleComplete(chances) {
 function submitName() {
     const name = document.getElementById('name').value.trim();
     if (name) {
+        // Check if already entered for this game
+        const enteredGameId = localStorage.getItem('raffleEnteredGameId');
+        if (enteredGameId === currentServerGameId) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = 'You have already entered the raffle!';
+            messageDiv.style.color = '#2196F3';
+            return;
+        }
+
         fetch('/api/names', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -86,9 +106,15 @@ function submitName() {
         .then(data => {
             if (data.success) {
                 const messageDiv = document.getElementById('message');
-                messageDiv.textContent = `Hello, ${name}! Your name has been submitted. Total names: ${data.names.length}`;
+                messageDiv.textContent = `Hello, ${name}! Your name has been submitted.`;
                 messageDiv.style.color = 'green';
                 document.getElementById('name').value = '';
+                // Hide the form after successful entry
+                document.getElementById('nameForm').style.display = 'none';
+                // Update total players immediately
+                updateTotalPlayersDisplay(data.names.length);
+                // Mark as entered for this game
+                localStorage.setItem('raffleEnteredGameId', currentServerGameId);
             }
         })
         .catch(err => {
@@ -99,6 +125,22 @@ function submitName() {
         });
     }
 }
+
+// Initial game_id fetch
+fetch('/api/game-id')
+    .then(res => res.json())
+    .then(data => {
+        currentServerGameId = data.game_id;
+        // Check if already entered
+        const enteredGameId = localStorage.getItem('raffleEnteredGameId');
+        if (enteredGameId === currentServerGameId) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = 'You have already entered the raffle!';
+            messageDiv.style.color = '#2196F3';
+            document.getElementById('nameForm').style.display = 'none';
+        }
+    })
+    .catch(err => console.error('Error fetching game ID:', err));
 
 // Initial winner display
 fetch('/api/winner')
@@ -147,6 +189,15 @@ fetch('/api/winners')
     })
     .catch(err => console.error('Error:', err));
 
+// Initial names list for total players
+fetch('/api/names')
+    .then(res => res.json())
+    .then(data => {
+        currentNames = data;
+        updateTotalPlayersDisplay(data.length);
+    })
+    .catch(err => console.error('Error:', err));
+
 // Poll for winners list updates every 1 second
 setInterval(() => {
     fetch('/api/winners')
@@ -155,6 +206,19 @@ setInterval(() => {
             if (JSON.stringify(data.winners) !== JSON.stringify(currentWinners)) {
                 currentWinners = data.winners;
                 renderWinnersList(data.winners);
+            }
+        })
+        .catch(err => console.error('Error:', err));
+}, 1000);
+
+// Poll for names updates every 1 second
+setInterval(() => {
+    fetch('/api/names')
+        .then(res => res.json())
+        .then(data => {
+            if (JSON.stringify(data) !== JSON.stringify(currentNames)) {
+                currentNames = data;
+                updateTotalPlayersDisplay(data.length);
             }
         })
         .catch(err => console.error('Error:', err));

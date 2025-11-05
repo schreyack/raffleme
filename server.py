@@ -2,6 +2,7 @@ import json
 import random
 import threading
 import time
+import uuid
 from flask import Flask, request, jsonify, send_from_directory
 
 app = Flask(__name__)
@@ -11,12 +12,13 @@ WINNER_FILE = 'winner.json'
 SELECTING_FILE = 'selecting.json'
 CHANCES_FILE = 'chances.json'
 WINNERS_LIST_FILE = 'winners_list.json'
+GAME_ID_FILE = 'game_id.json'
 
 def load_names():
     try:
         with open(NAMES_FILE, 'r') as f:
             return json.load(f)
-    except FileNotFoundError:
+    except (FileNotFoundError, json.JSONDecodeError):
         return []
 
 def save_names(names):
@@ -27,7 +29,7 @@ def load_winner():
     try:
         with open(WINNER_FILE, 'r') as f:
             return json.load(f)
-    except FileNotFoundError:
+    except (FileNotFoundError, json.JSONDecodeError):
         return None
 
 def save_winner(winner):
@@ -38,7 +40,7 @@ def load_selecting():
     try:
         with open(SELECTING_FILE, 'r') as f:
             return json.load(f)
-    except FileNotFoundError:
+    except (FileNotFoundError, json.JSONDecodeError):
         return False
 
 def save_selecting(selecting):
@@ -49,7 +51,7 @@ def load_chances():
     try:
         with open(CHANCES_FILE, 'r') as f:
             return json.load(f)
-    except FileNotFoundError:
+    except (FileNotFoundError, json.JSONDecodeError):
         return 0
 
 def save_chances(chances):
@@ -60,12 +62,26 @@ def load_winners_list():
     try:
         with open(WINNERS_LIST_FILE, 'r') as f:
             return json.load(f)
-    except FileNotFoundError:
+    except (FileNotFoundError, json.JSONDecodeError):
         return []
 
 def save_winners_list(winners_list):
     with open(WINNERS_LIST_FILE, 'w') as f:
         json.dump(winners_list, f)
+
+def load_game_id():
+    try:
+        with open(GAME_ID_FILE, 'r') as f:
+            data = json.load(f)
+            return data.get('game_id', str(uuid.uuid4()))
+    except (FileNotFoundError, json.JSONDecodeError):
+        game_id = str(uuid.uuid4())
+        save_game_id(game_id)
+        return game_id
+
+def save_game_id(game_id):
+    with open(GAME_ID_FILE, 'w') as f:
+        json.dump({'game_id': game_id}, f)
 
 @app.route('/')
 def index():
@@ -175,7 +191,14 @@ def new_game():
     save_chances(5)
     save_winner([])
     save_selecting(False)
+    # Generate new game_id for new game
+    new_game_id = str(uuid.uuid4())
+    save_game_id(new_game_id)
     return jsonify({'success': True})
+
+@app.route('/api/game-id', methods=['GET'])
+def get_game_id():
+    return jsonify({'game_id': load_game_id()})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)
