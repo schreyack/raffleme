@@ -281,8 +281,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('name').value = '';
                     // Update current game ID
                     currentServerGameId = data.game_id;
-                    // Force UI update
+                    // Force UI update and check raffle status
                     updateWinnerDisplay({winners: [], selecting: false});
+                    checkRaffleComplete(currentChances);
                 } else if (!currentServerGameId) {
                     currentServerGameId = data.game_id;
                 }
