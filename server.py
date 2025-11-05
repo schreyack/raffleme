@@ -7,18 +7,14 @@ from flask import Flask, request, jsonify, send_from_directory
 
 app = Flask(__name__)
 
-QUESTIONS = [
-    {"question": "What color is Santa's suit traditionally?", "options": ["Red", "Blue", "Green", "Yellow"], "correct": 0},
-    {"question": "True or False: Santa Claus is based on Saint Nicholas.", "options": ["True", "False"], "correct": 0},
-    {"question": "How many reindeer does Santa have?", "options": ["8", "9", "10", "7"], "correct": 1},
-    {"question": "What is the name of Santa's reindeer that starts with 'R'?", "options": ["Rudolph", "Dasher", "Blitzen", "Cupid"], "correct": 0},
-    {"question": "In what country did Christmas trees originate?", "options": ["Germany", "USA", "England", "France"], "correct": 0},
-    {"question": "What does 'Xmas' stand for?", "options": ["Christmas", "Xylophone", "Xenon", "Xerox"], "correct": 0},
-    {"question": "What is the traditional Christmas meal in the UK?", "options": ["Turkey", "Ham", "Roast Beef", "Fish"], "correct": 0},
-    {"question": "Which Christmas carol contains the line 'Silent night, holy night'?", "options": ["Silent Night", "Jingle Bells", "White Christmas", "The Christmas Song"], "correct": 0},
-    {"question": "What is the name of the Grinch's dog?", "options": ["Max", "Rex", "Spot", "Buddy"], "correct": 0},
-    {"question": "How many ghosts visit Scrooge in A Christmas Carol?", "options": ["3", "4", "5", "2"], "correct": 1},
-]
+# Load trivia questions from JSON file
+with open("trivia_questions.json", "r") as f:
+    QUESTIONS = json.load(f)
+
+# Trivia questions API endpoint
+@app.route('/api/questions', methods=['GET'])
+def get_questions():
+    return jsonify(QUESTIONS)
 
 NAMES_FILE = 'names.json'
 WINNER_FILE = 'winner.json'

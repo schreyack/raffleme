@@ -33,6 +33,16 @@
             <h2>Raffle Complete! Winners:</h2>
             <ul id="winnersUl"></ul>
         </div>
+        
+        <!-- Custom Trivia Result Popup -->
+        <div id="triviaPopup" class="popup-overlay" style="display: none;">
+            <div class="popup-content">
+                <div class="popup-icon" id="popupIcon"></div>
+                <h3 id="popupTitle"></h3>
+                <p id="popupMessage"></p>
+                <button class="popup-button" onclick="closeTriviaPopup()">Continue</button>
+            </div>
+        </div>
     </div>
     <script src="script.js?v=14"></script>
 </body>

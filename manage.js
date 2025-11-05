@@ -5,7 +5,7 @@ function updateChancesDisplay(chances) {
 }
 
 function renderNameList(names) {
-    document.getElementById('totalNames').textContent = `Total names: ${names.length}`;
+    document.getElementById('totalNames').textContent = `Total Players: ${names.length}`;
     const nameList = document.getElementById('nameList');
     nameList.innerHTML = '';
     names.forEach((name, index) => {
@@ -47,7 +47,6 @@ function renderWinnersList(winners) {
 
 var countdownInterval = null;
 var countdown = 5;
-var lastWinner = null;
 
 function updateWinnerDisplay(data) {
     const winners = data.winners || [];
@@ -67,22 +66,6 @@ function updateWinnerDisplay(data) {
         }
         winnerDiv.innerHTML = `Selecting Winner In:<br><span class="countdown-number">${countdown}</span>`;
         winnerDiv.style.display = 'block';
-    } else if (winners.length > 0) {
-        const winner = winners[0];
-        if (winner !== lastWinner) {
-            if (countdownInterval) {
-                clearInterval(countdownInterval);
-                countdownInterval = null;
-            }
-            lastWinner = winner;
-            winnerDiv.innerHTML = `WINNER:<br><span class="winner-name">${winner}</span>`;
-            winnerDiv.style.display = 'block';
-            // Clear winner display after 10 seconds
-            setTimeout(() => {
-                winnerDiv.style.display = 'none';
-                lastWinner = null;
-            }, 10000);
-        }
     } else {
         if (countdownInterval) {
             clearInterval(countdownInterval);

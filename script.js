@@ -6,39 +6,17 @@ var currentWinners = [];
 var currentNames = [];
 var currentServerGameId = null;
 
-const QUESTIONS = [
-    {"question": "What color is Santa's suit traditionally?", "options": ["Red", "Blue", "Green", "Yellow"], "correct": 0},
-    {"question": "True or False: Santa Claus is based on Saint Nicholas.", "options": ["False", "True"], "correct": 1},
-    {"question": "How many reindeer does Santa have?", "options": ["8", "10", "9", "7"], "correct": 2},
-    {"question": "What is the name of Santa's reindeer that starts with 'R'?", "options": ["Dasher", "Blitzen", "Cupid", "Rudolph"], "correct": 3},
-    {"question": "In what country did Christmas trees originate?", "options": ["Germany", "USA", "England", "France"], "correct": 0},
-    {"question": "What does 'Xmas' stand for?", "options": ["Xylophone", "Christmas", "Xenon", "Xerox"], "correct": 1},
-    {"question": "What is the traditional Christmas meal in the UK?", "options": ["Ham", "Roast Beef", "Fish", "Turkey"], "correct": 3},
-    {"question": "Which Christmas carol contains the line 'Silent night, holy night'?", "options": ["Jingle Bells", "White Christmas", "The Christmas Song", "Silent Night"], "correct": 3},
-    {"question": "What is the name of the Grinch's dog?", "options": ["Rex", "Spot", "Max", "Buddy"], "correct": 2},
-    {"question": "How many ghosts visit Scrooge in A Christmas Carol?", "options": ["4", "3", "5", "2"], "correct": 0},
-    {"question": "What is the highest-grossing Christmas movie of all time?", "options": ["Home Alone", "The Grinch", "Elf", "Die Hard"], "correct": 1},
-    {"question": "Which country sends the most Christmas cards?", "options": ["USA", "UK", "Germany", "Japan"], "correct": 1},
-    {"question": "What color are mistletoe berries?", "options": ["Red", "White", "Blue", "Yellow"], "correct": 1},
-    {"question": "How many sides does a snowflake typically have?", "options": ["4", "6", "8", "10"], "correct": 1},
-    {"question": "What is the name of Santa's wife?", "options": ["Mrs. Claus", "Mary Claus", "Clara Claus", "Anna Claus"], "correct": 0},
-    {"question": "Which Christmas song was originally written for Thanksgiving?", "options": ["Jingle Bells", "White Christmas", "Winter Wonderland", "Let It Snow"], "correct": 0},
-    {"question": "When was the first Christmas card invented?", "options": ["1840", "1843", "1850", "1860"], "correct": 1},
-    {"question": "What is the largest Christmas cookie ever baked?", "options": ["5 feet diameter", "10 feet diameter", "15 feet diameter", "20 feet diameter"], "correct": 0},
-    {"question": "What is the most popular Christmas tree topper?", "options": ["Angel", "Star", "Bow", "Bell"], "correct": 1},
-    {"question": "Which reindeer is known as 'the red-nosed reindeer'?", "options": ["Dasher", "Rudolph", "Blitzen", "Cupid"], "correct": 3},
-    {"question": "What is the traditional Christmas color combination?", "options": ["Red and White", "Blue and Gold", "Green and Silver", "Purple and Gold"], "correct": 0},
-    {"question": "How many days of Christmas are there in the song?", "options": ["7", "10", "12", "14"], "correct": 2},
-    {"question": "What does 'Noel' mean?", "options": ["Snow", "Christmas", "Gift", "Joy"], "correct": 1},
-    {"question": "Which country invented the Advent calendar?", "options": ["Germany", "USA", "UK", "France"], "correct": 0},
-    {"question": "What reindeer pulls Santa's sleigh in front?", "options": ["Dasher", "Comet", "Vixen", "Blitzen"], "correct": 0},
-    {"question": "What is the most common Christmas tree species?", "options": ["Balsam Fir", "Douglas Fir", "Norway Spruce", "Scots Pine"], "correct": 1},
-    {"question": "What is the most expensive Christmas tree ever sold?", "options": ["Norway Spruce", "Douglas Fir", "Bristlecone Pine", "Giant Sequoia"], "correct": 0},
-    {"question": "Which Christmas movie features the song 'You're a Mean One, Mr. Grinch'?", "options": ["Elf", "The Polar Express", "How the Grinch Stole Christmas", "A Christmas Carol"], "correct": 2},
-    {"question": "What is the average number of gifts given during Christmas?", "options": ["5", "10", "15", "20"], "correct": 1},
-    {"question": "Which country has the most Christmas lights per capita?", "options": ["USA", "Australia", "Canada", "UK"], "correct": 1},
-    {"question": "What is the most popular Christmas gift in the world?", "options": ["Toys", "Chocolate", "Books", "Clothing"], "correct": 1},
-];
+// Fetch trivia questions from backend
+let QUESTIONS = [];
+fetch('/api/questions')
+    .then(response => response.json())
+    .then(data => {
+        QUESTIONS = data;
+        // If you have a trivia initialization function, call it here
+        if (typeof initTrivia === 'function') {
+            initTrivia();
+        }
+    });
 window.testFunction = function() {
     alert('Test function called!');
     console.log('Test function executed');
@@ -254,6 +232,13 @@ function showTrivia() {
     localStorage.setItem('currentQuestion', questionIndex);
     const q = QUESTIONS[questionIndex];
     document.getElementById('triviaQuestion').textContent = q.question;
+    
+    // Clear any previously selected radio button
+    const selectedRadio = document.querySelector('input[name="answer"]:checked');
+    if (selectedRadio) {
+        selectedRadio.checked = false;
+    }
+    
     for (let i = 0; i < q.options.length; i++) {
         document.getElementById('option' + i).textContent = q.options[i];
         document.getElementById('option' + i).previousElementSibling.style.display = 'inline';
@@ -285,12 +270,40 @@ function submitTrivia() {
     .then(data => {
         console.log('Trivia response:', data);
         if (data.success) {
-            alert('Correct! You got 2 extra chances!');
+            showTriviaPopup(true, 'Correct!', '🎉 You got 2 extra chances!');
         } else {
-            alert('Wrong answer. Better luck next time!');
+            showTriviaPopup(false, 'Wrong Answer', 'Better luck next time!');
         }
         hideTrivia();
     });
+}
+
+function showTriviaPopup(isCorrect, title, message) {
+    const popup = document.getElementById('triviaPopup');
+    const popupContent = popup.querySelector('.popup-content');
+    const icon = document.getElementById('popupIcon');
+    const titleEl = document.getElementById('popupTitle');
+    const messageEl = document.getElementById('popupMessage');
+    
+    // Reset classes
+    popupContent.classList.remove('correct', 'wrong');
+    
+    if (isCorrect) {
+        popupContent.classList.add('correct');
+        icon.textContent = '🎉';
+    } else {
+        popupContent.classList.add('wrong');
+        icon.textContent = '😞';
+    }
+    
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    popup.style.display = 'flex';
+}
+
+function closeTriviaPopup() {
+    const popup = document.getElementById('triviaPopup');
+    popup.style.display = 'none';
 }
 
 // Poll for names updates every 1 second
