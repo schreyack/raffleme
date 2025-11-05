@@ -598,7 +598,7 @@ button:active {
 }
 
 .dashboard-content p {
-    font-size: 1.6em;
+    font-size: 1.4em;
     font-weight: 600;
     color: var(--color-dark);
     margin-top: 25px;
@@ -608,7 +608,7 @@ button:active {
     color: var(--color-red);
     text-decoration: none;
     font-weight: 700;
-    font-size: 1.4em;
+    font-size: 1.2em;
 }
 
 .dashboard-content a:hover {
