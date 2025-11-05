@@ -121,20 +121,20 @@ h2 {
 }
 
 .stats-table td {
-    padding: 15px 18px;
+    padding: 20px 25px;
     text-align: left;
     font-weight: 500;
     color: var(--color-dark);
-    font-size: 1.2em;
+    font-size: 1.6em;
 }
 
 .stats-table th {
-    padding: 18px 15px;
+    padding: 25px 20px;
     text-align: center;
     font-weight: 700;
     color: var(--color-red);
     background-color: var(--color-gold);
-    font-size: 1.4em;
+    font-size: 1.8em;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
@@ -143,14 +143,14 @@ h2 {
     font-weight: 600;
     color: var(--color-red);
     width: 60%;
-    font-size: 1.3em;
+    font-size: 1.7em;
 }
 
 .stats-table td:last-child {
     text-align: right;
     font-weight: 700;
     color: var(--color-green);
-    font-size: 1.5em;
+    font-size: 2.0em;
 }
 
 label {
@@ -261,9 +261,9 @@ button:active {
 }
 
 #winnersList li {
-    padding: 15px 0;
+    padding: 20px 0;
     border-bottom: 1px solid var(--color-light-gray);
-    font-size: 1.4em;
+    font-size: 1.8em;
     color: var(--color-dark);
     font-weight: 600;
 }
@@ -274,8 +274,8 @@ button:active {
 
 #winnersList li::before {
     content: '🎁 ';
-    margin-right: 10px;
-    font-size: 1.5em;
+    margin-right: 15px;
+    font-size: 1.9em;
 }
 
 /* --- Message --- */
@@ -534,19 +534,24 @@ button:active {
 
 .stats-column {
     flex: 1;
-    max-width: 400px;
+    min-width: 350px;
 }
 
 .qr-column {
     flex: 1;
-    max-width: 400px;
+    min-width: 350px;
+}
+
+.winners-column {
+    flex: 1;
+    min-width: 350px;
 }
 
 .winners-column h3 {
     font-family: var(--font-heading);
     color: var(--color-red);
-    font-size: 1.8em;
-    margin-bottom: 15px;
+    font-size: 2.2em;
+    margin-bottom: 20px;
     text-align: center;
     font-weight: 700;
     text-transform: uppercase;
