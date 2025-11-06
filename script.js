@@ -294,7 +294,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function showTrivia() {
     const userName = localStorage.getItem('userName');
-    if (!userName) return;
+    const enteredGameId = localStorage.getItem('raffleEnteredGameId');
+    if (!userName || enteredGameId !== currentServerGameId) return;
     const questionIndex = Math.floor(Math.random() * QUESTIONS.length);
     localStorage.setItem('currentQuestion', questionIndex);
     const q = QUESTIONS[questionIndex];
