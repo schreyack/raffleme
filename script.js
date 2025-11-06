@@ -66,7 +66,8 @@ function updateWinnerDisplay(data) {
         }
         
         if (shouldShowTrivia) {
-            winnerDiv.innerHTML = `Trivia Time! Answer for extra chances! Time left: <span class="countdown-number">${countdown}</span>`;
+            winnerDiv.innerHTML = `Time Remaining: <span class="countdown-number">${countdown}</span> seconds`;
+            winnerDiv.classList.add('countdown-active');
             winnerDiv.style.display = 'block';
         } else {
             winnerDiv.style.display = 'none';
@@ -77,6 +78,7 @@ function updateWinnerDisplay(data) {
             countdownInterval = null;
             hideTrivia();
         }
+        winnerDiv.classList.remove('countdown-active');
         winnerDiv.style.display = 'none';
     }
 }
