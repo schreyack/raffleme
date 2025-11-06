@@ -20,6 +20,7 @@ var currentWinners = [];
 var currentNames = [];
 var currentServerGameId = null;
 var triviaCooldown = false;
+var countdownFinishedCooldown = false;
 
 // Fetch trivia questions from backend
 let QUESTIONS = [];
@@ -47,7 +48,7 @@ function updateWinnerDisplay(data) {
         const enteredGameId = localStorage.getItem('raffleEnteredGameId');
         const shouldShowTrivia = userName && enteredGameId === currentServerGameId;
         
-        if (!countdownInterval) {
+        if (!countdownInterval && !countdownFinishedCooldown) {
             countdown = 20;
             if (shouldShowTrivia) {
                 showTrivia();
@@ -57,9 +58,14 @@ function updateWinnerDisplay(data) {
                 if (countdown <= 0) {
                     clearInterval(countdownInterval);
                     countdownInterval = null;
+                    countdownFinishedCooldown = true;
                     if (shouldShowTrivia) {
                         hideTrivia();
                     }
+                    // Reset cooldown after 2 seconds
+                    setTimeout(() => {
+                        countdownFinishedCooldown = false;
+                    }, 2000);
                 }
                 updateWinnerDisplay({winners: [], selecting: true});
             }, 1000);
@@ -318,6 +324,7 @@ function showTrivia() {
         if (data.question) {
             localStorage.setItem('currentQuestion', data.index);
             const q = data.question;
+            console.log('Trivia question data:', q); // Debug log
             document.getElementById('triviaQuestion').textContent = q.question;
             
             // Clear any previously selected radio button
@@ -326,18 +333,40 @@ function showTrivia() {
                 selectedRadio.checked = false;
             }
             
-            for (let i = 0; i < q.options.length; i++) {
-                document.getElementById('option' + i).textContent = q.options[i];
-                document.getElementById('option' + i).previousElementSibling.style.display = 'inline';
+            // Ensure we have options array
+            if (!q.options || !Array.isArray(q.options)) {
+                console.error('Invalid options data:', q.options);
+                hideTrivia();
+                return;
+            }
+            
+            for (let i = 0; i < q.options.length && i < 4; i++) {
+                const optionLabel = document.getElementById('option' + i);
+                const optionRadio = optionLabel ? optionLabel.previousElementSibling : null;
+                if (optionLabel && optionRadio) {
+                    optionLabel.textContent = q.options[i] || '';
+                    optionRadio.style.display = 'inline';
+                    optionLabel.style.display = 'inline';
+                } else {
+                    console.error('Could not find elements for option', i);
+                }
             }
             for (let i = q.options.length; i < 4; i++) {
-                document.getElementById('option' + i).previousElementSibling.style.display = 'none';
-                document.getElementById('option' + i).style.display = 'none';
+                const optionLabel = document.getElementById('option' + i);
+                const optionRadio = optionLabel ? optionLabel.previousElementSibling : null;
+                if (optionLabel && optionRadio) {
+                    optionRadio.style.display = 'none';
+                    optionLabel.style.display = 'none';
+                }
             }
             document.getElementById('trivia').style.display = 'block';
             // Hide main page content during trivia
-            document.querySelector('.dashboard-layout').style.display = 'none';
-            document.querySelector('h1').style.display = 'none';
+            const layout = document.querySelector('.dashboard-layout');
+            if (layout) layout.style.display = 'none';
+            const title = document.querySelector('h1');
+            if (title) title.style.display = 'none';
+            const statsTable = document.querySelector('.stats-table');
+            if (statsTable) statsTable.style.display = 'none';
             triviaCooldown = true;
         } else {
             // No questions left for this player
@@ -353,8 +382,12 @@ function showTrivia() {
 function hideTrivia() {
     document.getElementById('trivia').style.display = 'none';
     // Show main page content after trivia
-    document.querySelector('.dashboard-layout').style.display = '';
-    document.querySelector('h1').style.display = '';
+    const layout = document.querySelector('.dashboard-layout');
+    if (layout) layout.style.display = '';
+    const title = document.querySelector('h1');
+    if (title) title.style.display = '';
+    const statsTable = document.querySelector('.stats-table');
+    if (statsTable) statsTable.style.display = '';
     // Prevent showing new trivia for 5 seconds after hiding
     setTimeout(() => {
         triviaCooldown = false;
