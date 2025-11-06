@@ -66,7 +66,7 @@ function updateWinnerDisplay(data) {
         }
         
         if (shouldShowTrivia) {
-            winnerDiv.innerHTML = `Time Remaining: <span class="countdown-number">${countdown}</span> seconds`;
+            winnerDiv.innerHTML = `<span class="countdown-number">${countdown}</span>`;
             winnerDiv.classList.add('countdown-active');
             winnerDiv.style.display = 'block';
         } else {
