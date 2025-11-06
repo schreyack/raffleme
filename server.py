@@ -252,9 +252,7 @@ def select_winner():
                 save_winners_list(winners_list)
                 save_winner([winner])
                 # Remove winner from the pool to prevent them from winning again
-                if winner in names_dict:
-                    del names_dict[winner]
-                    save_names(names_dict)
+                r.hdel('names', winner)
                 global_chances = load_chances()
                 if global_chances > 0:
                     save_chances(global_chances - 1)
