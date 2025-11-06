@@ -19,6 +19,7 @@ var currentChances = 0;
 var currentWinners = [];
 var currentNames = [];
 var currentServerGameId = null;
+var triviaCooldown = false;
 
 // Fetch trivia questions from backend
 let QUESTIONS = [];
@@ -307,6 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function showTrivia() {
+    if (triviaCooldown) return;
     const userName = localStorage.getItem('userName');
     fetch(`/api/player-question?player=${encodeURIComponent(userName)}`)
     .then(res => res.json())
@@ -331,6 +333,7 @@ function showTrivia() {
                 document.getElementById('option' + i).style.display = 'none';
             }
             document.getElementById('trivia').style.display = 'block';
+            triviaCooldown = true;
         } else {
             // No questions left for this player
             hideTrivia();
@@ -344,6 +347,10 @@ function showTrivia() {
 
 function hideTrivia() {
     document.getElementById('trivia').style.display = 'none';
+    // Prevent showing new trivia for 5 seconds after hiding
+    setTimeout(() => {
+        triviaCooldown = false;
+    }, 5000);
 }
 
 function submitTrivia() {
