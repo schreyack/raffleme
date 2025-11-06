@@ -39,6 +39,15 @@ with open("trivia_questions.json", "r") as f:
 def get_questions():
     return QUESTIONS
 
+@app.get('/api/player-question')
+def get_player_question(player: str):
+    seen = r.smembers(f'player:{player}:seen')
+    available = [i for i in range(len(QUESTIONS)) if str(i) not in seen]
+    if not available:
+        return {'question': None, 'index': None}
+    idx = random.choice(available)
+    return {'question': QUESTIONS[idx], 'index': idx}
+
 # Data access functions using Redis
 def load_names():
     names = r.hgetall('names')
@@ -140,6 +149,8 @@ async def add_name(request: Request):
             return {'success': False, 'message': 'Name already exists. Please enter a different name.'}
         names[name] = 1
         save_names(names)
+        # Initialize player's seen questions set
+        r.sadd(f'player:{name}:seen')
         return {'success': True, 'names': list(names.keys())}
     return {'success': False, 'message': 'Name cannot be empty.'}
 
@@ -197,6 +208,8 @@ async def submit_answer(request: Request):
             if name in names:
                 names[name] += 2
                 save_names(names)
+                # Mark question as seen for this player
+                r.sadd(f'player:{name}:seen', question_index)
                 print(f"Updated chances for {name}: {names[name]}")
                 return {'success': True}
             else:

@@ -307,26 +307,39 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function showTrivia() {
-    const questionIndex = Math.floor(Math.random() * QUESTIONS.length);
-    localStorage.setItem('currentQuestion', questionIndex);
-    const q = QUESTIONS[questionIndex];
-    document.getElementById('triviaQuestion').textContent = q.question;
-    
-    // Clear any previously selected radio button
-    const selectedRadio = document.querySelector('input[name="answer"]:checked');
-    if (selectedRadio) {
-        selectedRadio.checked = false;
-    }
-    
-    for (let i = 0; i < q.options.length; i++) {
-        document.getElementById('option' + i).textContent = q.options[i];
-        document.getElementById('option' + i).previousElementSibling.style.display = 'inline';
-    }
-    for (let i = q.options.length; i < 4; i++) {
-        document.getElementById('option' + i).previousElementSibling.style.display = 'none';
-        document.getElementById('option' + i).style.display = 'none';
-    }
-    document.getElementById('trivia').style.display = 'block';
+    const userName = localStorage.getItem('userName');
+    fetch(`/api/player-question?player=${encodeURIComponent(userName)}`)
+    .then(res => res.json())
+    .then(data => {
+        if (data.question) {
+            localStorage.setItem('currentQuestion', data.index);
+            const q = data.question;
+            document.getElementById('triviaQuestion').textContent = q.question;
+            
+            // Clear any previously selected radio button
+            const selectedRadio = document.querySelector('input[name="answer"]:checked');
+            if (selectedRadio) {
+                selectedRadio.checked = false;
+            }
+            
+            for (let i = 0; i < q.options.length; i++) {
+                document.getElementById('option' + i).textContent = q.options[i];
+                document.getElementById('option' + i).previousElementSibling.style.display = 'inline';
+            }
+            for (let i = q.options.length; i < 4; i++) {
+                document.getElementById('option' + i).previousElementSibling.style.display = 'none';
+                document.getElementById('option' + i).style.display = 'none';
+            }
+            document.getElementById('trivia').style.display = 'block';
+        } else {
+            // No questions left for this player
+            hideTrivia();
+        }
+    })
+    .catch(err => {
+        console.error('Error fetching player question:', err);
+        hideTrivia();
+    });
 }
 
 function hideTrivia() {
