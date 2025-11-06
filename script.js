@@ -335,6 +335,9 @@ function showTrivia() {
                 document.getElementById('option' + i).style.display = 'none';
             }
             document.getElementById('trivia').style.display = 'block';
+            // Hide main page content during trivia
+            document.querySelector('.dashboard-layout').style.display = 'none';
+            document.querySelector('h1').style.display = 'none';
             triviaCooldown = true;
         } else {
             // No questions left for this player
@@ -349,6 +352,9 @@ function showTrivia() {
 
 function hideTrivia() {
     document.getElementById('trivia').style.display = 'none';
+    // Show main page content after trivia
+    document.querySelector('.dashboard-layout').style.display = '';
+    document.querySelector('h1').style.display = '';
     // Prevent showing new trivia for 5 seconds after hiding
     setTimeout(() => {
         triviaCooldown = false;
