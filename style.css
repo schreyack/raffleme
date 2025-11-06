@@ -983,7 +983,7 @@ button:active {
 
 #countdown-text {
     font-family: var(--font-heading);
-    font-size: 4vw;
+    font-size: 3.5vw;
     color: var(--color-gold);
     text-shadow: 0 0 10px var(--color-gold), 0 0 20px var(--color-red);
     animation: pulse 2s infinite;
