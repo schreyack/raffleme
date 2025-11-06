@@ -1019,4 +1019,9 @@ button:active {
     animation: pulse 2s infinite;
     text-align: center;
     margin: 20px 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 30px 60px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    display: inline-block;
 }
