@@ -41,21 +41,35 @@ function updateWinnerDisplay(data) {
     const selecting = data.selecting;
     const winnerDiv = document.getElementById('winner');
     if (selecting) {
+        // Check if user should see trivia before starting countdown
+        const userName = localStorage.getItem('userName');
+        const enteredGameId = localStorage.getItem('raffleEnteredGameId');
+        const shouldShowTrivia = userName && enteredGameId === currentServerGameId;
+        
         if (!countdownInterval) {
             countdown = 20;
-            showTrivia();
+            if (shouldShowTrivia) {
+                showTrivia();
+            }
             countdownInterval = setInterval(() => {
                 countdown--;
                 if (countdown <= 0) {
                     clearInterval(countdownInterval);
                     countdownInterval = null;
-                    hideTrivia();
+                    if (shouldShowTrivia) {
+                        hideTrivia();
+                    }
                 }
                 updateWinnerDisplay({winners: [], selecting: true});
             }, 1000);
         }
-        winnerDiv.innerHTML = `Trivia Time! Answer for extra chances! Time left: <span class="countdown-number">${countdown}</span>`;
-        winnerDiv.style.display = 'block';
+        
+        if (shouldShowTrivia) {
+            winnerDiv.innerHTML = `Trivia Time! Answer for extra chances! Time left: <span class="countdown-number">${countdown}</span>`;
+            winnerDiv.style.display = 'block';
+        } else {
+            winnerDiv.style.display = 'none';
+        }
     } else {
         if (countdownInterval) {
             clearInterval(countdownInterval);
@@ -293,9 +307,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function showTrivia() {
-    const userName = localStorage.getItem('userName');
-    const enteredGameId = localStorage.getItem('raffleEnteredGameId');
-    if (!userName || enteredGameId !== currentServerGameId) return;
     const questionIndex = Math.floor(Math.random() * QUESTIONS.length);
     localStorage.setItem('currentQuestion', questionIndex);
     const q = QUESTIONS[questionIndex];
