@@ -1013,7 +1013,7 @@ button:active {
 
 #winner.countdown-active {
     font-family: var(--font-heading);
-    font-size: 4vw;
+    font-size: 6vw;
     color: var(--color-gold);
     text-shadow: 0 0 10px var(--color-gold), 0 0 20px var(--color-red);
     animation: pulse 2s infinite;
@@ -1024,4 +1024,8 @@ button:active {
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     display: inline-block;
+}
+
+.management-container #winner.countdown-active {
+    font-size: 2.5vw;
 }
