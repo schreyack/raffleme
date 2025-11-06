@@ -41,7 +41,10 @@ def get_questions():
 
 @app.get('/api/player-question')
 def get_player_question(player: str):
-    seen = r.smembers(f'player:{player}:seen')
+    try:
+        seen = r.smembers(f'player:{player}:seen')
+    except:
+        seen = set()
     available = [i for i in range(len(QUESTIONS)) if str(i) not in seen]
     if not available:
         return {'question': None, 'index': None}
@@ -50,14 +53,20 @@ def get_player_question(player: str):
 
 # Data access functions using Redis
 def load_names():
-    names = r.hgetall('names')
-    return {k: int(v) for k, v in names.items()}
+    try:
+        names = r.hgetall('names')
+        return {k: int(v) for k, v in names.items()}
+    except:
+        return {}
 
 def save_names(names_dict):
-    if names_dict:
-        r.hset('names', mapping=names_dict)
-    else:
-        r.delete('names')
+    try:
+        if names_dict:
+            r.hset('names', mapping=names_dict)
+        else:
+            r.delete('names')
+    except:
+        pass
 
 def load_winner():
     winner = r.get('winner')
@@ -150,7 +159,10 @@ async def add_name(request: Request):
         names[name] = 1
         save_names(names)
         # Initialize player's seen questions set
-        r.sadd(f'player:{name}:seen')
+        try:
+            r.sadd(f'player:{name}:seen')
+        except:
+            pass
         return {'success': True, 'names': list(names.keys())}
     return {'success': False, 'message': 'Name cannot be empty.'}
 
@@ -209,7 +221,10 @@ async def submit_answer(request: Request):
                 names[name] += 2
                 save_names(names)
                 # Mark question as seen for this player
-                r.sadd(f'player:{name}:seen', question_index)
+                try:
+                    r.sadd(f'player:{name}:seen', question_index)
+                except:
+                    pass
                 print(f"Updated chances for {name}: {names[name]}")
                 return {'success': True}
             else:
@@ -265,7 +280,10 @@ def select_winner():
                 save_winners_list(winners_list)
                 save_winner([winner])
                 # Remove winner from the pool to prevent them from winning again
-                r.hdel('names', winner)
+                try:
+                    r.hdel('names', winner)
+                except:
+                    pass
                 global_chances = load_chances()
                 if global_chances > 0:
                     save_chances(global_chances - 1)
