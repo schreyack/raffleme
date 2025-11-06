@@ -48,6 +48,17 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(err => console.error('Error:', err));
 
+    // Generate QR code
+    const qrCodeUrl = window.location.origin;
+    new QRCode(document.getElementById("qrcode"), {
+        text: qrCodeUrl,
+        width: 300,
+        height: 300,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+    });
+
     // Initial players list for top players
     fetch('/api/players')
         .then(res => res.json())
