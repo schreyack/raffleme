@@ -630,6 +630,22 @@ button:active {
     margin: 30px 0;
 }
 
+#qrcode {
+    display: inline-block;
+    border: 3px solid var(--color-gold);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    width: 300px;
+    height: 300px;
+    text-align: center;
+}
+
+#qrcode canvas, #qrcode table {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: var(--border-radius);
+}
+
 .qr-code-container img {
     border: 3px solid var(--color-gold);
     border-radius: var(--border-radius);
