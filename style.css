@@ -1013,7 +1013,7 @@ button:active {
 
 #winner.countdown-active {
     font-family: var(--font-heading);
-    font-size: 2.5vw;
+    font-size: 4vw;
     color: var(--color-gold);
     text-shadow: 0 0 10px var(--color-gold), 0 0 20px var(--color-red);
     animation: pulse 2s infinite;
