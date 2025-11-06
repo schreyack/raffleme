@@ -25,7 +25,7 @@ import redis
 app = FastAPI()
 
 # Mount static files
-app.mount("/static", StaticFiles(directory="."), name="static")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Redis connection
 r = redis.Redis(host='redis', port=6379, decode_responses=True)
