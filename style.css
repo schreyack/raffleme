@@ -965,12 +965,12 @@ button:active {
 /* --- Countdown Timer --- */
 #countdown-timer {
     position: fixed;
-    top: 20px;
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translate(-50%, -50%);
     z-index: 1000;
     background-color: rgba(0, 0, 0, 0.8);
-    padding: 20px 40px;
+    padding: 30px 60px;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     opacity: 0;
@@ -983,7 +983,7 @@ button:active {
 
 #countdown-text {
     font-family: var(--font-heading);
-    font-size: 3vw;
+    font-size: 6vw;
     color: var(--color-gold);
     text-shadow: 0 0 10px var(--color-gold), 0 0 20px var(--color-red);
     animation: pulse 2s infinite;
